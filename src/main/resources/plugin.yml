@@ -1,0 +1,13 @@
+main: pd.guimx.Permadeath
+version: 0.0.1
+name: Permadeath
+author: guimx
+api-version: 1.21.1
+description: meow
+
+commands:
+  permadeath:
+    aliases:
+      - pd
+    description: Permadeath command
+    permission: pd.main
