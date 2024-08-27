@@ -1,23 +1,20 @@
 package pd.guimx.listeners;
 
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.World;
+import org.bukkit.*;
+import org.bukkit.block.Block;
+import org.bukkit.block.Skull;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerResourcePackStatusEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent.Status;
 import pd.guimx.Permadeath;
 import pd.guimx.utils.MessageUtils;
 
-import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class PlayerListener implements Listener{
@@ -56,6 +53,21 @@ public class PlayerListener implements Listener{
     @EventHandler
     public void onDeath(PlayerDeathEvent e){
         Player player = e.getEntity();
+
+        Location location = player.getLocation();
+        Block block = location.getBlock();
+        block.setType(Material.NETHER_BRICK_FENCE);
+
+        location.setY(location.getBlockY()+1);
+        block = location.getBlock();
+        block.setType(Material.PLAYER_HEAD);
+        Skull skull = (Skull) block.getState();
+        skull.setOwnerProfile(player.getPlayerProfile());
+        skull.update();
+
+        location.setY(location.getBlockY()-2);
+        location.getBlock().setType(Material.BEDROCK);
+
         Bukkit.getScheduler().runTaskLater(permadeath, () -> {
             player.spigot().respawn();
             player.setGameMode(GameMode.SPECTATOR);
@@ -76,5 +88,36 @@ public class PlayerListener implements Listener{
             Bukkit.getScheduler().runTaskLater(permadeath, () -> {
                 player.kickPlayer(reason);}, 150L);
             }, 1L);
+    }
+
+    @EventHandler
+    public void onSleep(PlayerBedEnterEvent e){
+        //Fix this for the love of god this is awful
+        if (permadeath.getMainConfigManager().getDay() < 10){
+            return;
+        }
+        AtomicBoolean sleep = new AtomicBoolean(true);
+        Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+            if (!e.getPlayer().isSleeping()){
+                sleep.set(false);
+            }
+        },1L);
+        if (!sleep.get()){
+            return;
+        }
+        Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+            int[] sleepingPlayers = {0};
+            Bukkit.getServer().getOnlinePlayers().forEach(player -> {
+                if (player.isSleeping()){
+                    sleepingPlayers[0]++;
+                }
+            });
+            if (sleepingPlayers[0] >= permadeath.getMainConfigManager().getMinPlayersSleep()){
+                Objects.requireNonNull(Bukkit.getWorld("world")).setTime(1000);
+            }else{
+                Bukkit.broadcastMessage("+"+sleepingPlayers[0]);
+            }
+        },100L);
+
     }
 }

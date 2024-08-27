@@ -7,7 +7,7 @@ public class ManageDatabase {
 
     public ManageDatabase(){
         try {
-            this.conn = DriverManager.getConnection("jdbc:sqlite:players.db");
+            this.conn = DriverManager.getConnection("jdbc:sqlite:plugins/Permadeath/players.db");
         }catch (SQLException e){
             e.printStackTrace();
         }

@@ -6,6 +6,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import pd.guimx.Permadeath;
+import pd.guimx.utils.CustomSkeletons;
 import pd.guimx.utils.MessageUtils;
 
 
@@ -34,7 +35,7 @@ public class MainCommand implements CommandExecutor {
             }
             permadeath.getMainConfigManager().reloadConfig();
             sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"&aReloaded config!"));
-        } else{
+        }else{
             sender.sendMessage(MessageUtils.translateColor(helpCommand()));
         }
         return true;
@@ -94,6 +95,8 @@ public class MainCommand implements CommandExecutor {
                     return;
                 }
                 sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix + "&aNow on day: &c" + permadeath.getMainConfigManager().getDay()));
+                sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"Please remember that if you wish to change how mobs spawn you must change so " +
+                        "manually and restart the server"));
             }
         }
     }
