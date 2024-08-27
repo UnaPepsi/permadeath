@@ -8,7 +8,6 @@ import org.bukkit.entity.Player;
 import pd.guimx.Permadeath;
 import pd.guimx.utils.MessageUtils;
 
-import java.time.Instant;
 
 public class MainCommand implements CommandExecutor {
 
@@ -25,9 +24,17 @@ public class MainCommand implements CommandExecutor {
             return true;
         } else if ("version".equalsIgnoreCase(args[0])) {
             sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"currently in version "+permadeath.version));
-        } else if ("afkban".equalsIgnoreCase(args[0])) {
-            subCommandHandler(sender,"afkban",args);
-        }else{
+        } else if ("afkban".equalsIgnoreCase(args[0]) || "unban".equalsIgnoreCase(args[0]) ||
+                    "setday".equalsIgnoreCase(args[0])) {
+                        subCommandHandler(sender,args[0],args);
+        } else if ("reload".equalsIgnoreCase(args[0])) {
+            if (!sender.hasPermission("pd.reload")){
+                sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"&cYou need &7pd.reload &cpermissions to run this command"));
+                return true;
+            }
+            permadeath.getMainConfigManager().reloadConfig();
+            sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"&aReloaded config!"));
+        } else{
             sender.sendMessage(MessageUtils.translateColor(helpCommand()));
         }
         return true;
@@ -43,14 +50,50 @@ public class MainCommand implements CommandExecutor {
                 sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix + "&cusage: /permadeath afkban <player>"));
             }else{
                 Player player = Bukkit.getPlayer(args[1]);
-                if (player == null){
-                    sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"&cplayer doesn't exist"));
+                if(!permadeath.getDb().banOrUnbanPlayer(args[1],true)){
+                    sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"&cplayer is already banned or doesn't exist"));
                     return;
                 }
-                String reason = MessageUtils.translateColor("&c&lPERMADEATH!&r\nYou have died for being AFK.");
-                Instant time = Instant.ofEpochSecond(Instant.now().getEpochSecond()+(86400*365*50));
-                player.ban(reason,time, sender.getName(),true);
-                Bukkit.getConsoleSender().sendMessage(String.valueOf(time));
+                if (player != null) {
+                    String reason = MessageUtils.translateColor("&c&lPERMADEATH!&r\nYou have died for being AFK.");
+                    player.kickPlayer(reason);
+                }
+                sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"&cbanned "+args[1]));
+            }
+        }else if ("unban".equalsIgnoreCase(command)) {
+            if (!sender.hasPermission("pd.unban")){
+                sender.sendMessage(MessageUtils.translateColor("&cYou need &7pd.unban &cpermissions to run this command"));
+                return;
+            }
+            if (args.length < 2 || args.length > 3){
+                sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix + "&cusage: /permadeath unban <player>"));
+            }else{
+                if(!permadeath.getDb().banOrUnbanPlayer(args[1],false)){
+                    sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"&cplayer is already unbanned or doesn't exist"));
+                    return;
+                }
+                sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"&aunbanned "+args[1]));
+            }
+        } else if ("setday".equalsIgnoreCase(command)) {
+            if (!sender.hasPermission("pd.set")){
+                sender.sendMessage(MessageUtils.translateColor("&cYou need &7pd.set &cpermissions to run this command"));
+                return;
+            }
+            if (args.length < 2 || args.length > 3){
+                sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix + "&cusage: /permadeath setday <day>"));
+            }else {
+                int day;
+                try {
+                    day = Integer.parseInt(args[1]);
+                    if (day < 0) {
+                        throw new NumberFormatException();
+                    }
+                    permadeath.getMainConfigManager().setDay(day);
+                } catch (NumberFormatException e) {
+                    sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix + "&cday must be a valid Integer"));
+                    return;
+                }
+                sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix + "&aNow on day: &c" + permadeath.getMainConfigManager().getDay()));
             }
         }
     }

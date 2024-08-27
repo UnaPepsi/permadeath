@@ -1,23 +1,45 @@
 package pd.guimx;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Difficulty;
 import org.bukkit.plugin.java.JavaPlugin;
 import pd.guimx.commands.MainCommand;
+import pd.guimx.config.MainConfigManager;
+import pd.guimx.listeners.EntityListener;
 import pd.guimx.listeners.PlayerListener;
+import pd.guimx.utils.ManageDatabase;
+import pd.guimx.utils.MessageUtils;
+
+import java.sql.SQLException;
 
 public class Permadeath extends JavaPlugin {
 
     public static String prefix = "&8[&4&lPermadeath&r&8]&r ";
     public String version = getDescription().getVersion();
+    private ManageDatabase db;
+
+    private MainConfigManager mainConfigManager;
 
     public void onEnable(){
+        Bukkit.getWorlds().forEach(w -> {
+            w.setDifficulty(Difficulty.HARD);
+            w.setHardcore(true);
+        });
         registerCommands();
         registerEvents();
-        Bukkit.getConsoleSender().sendMessage("Permadeath has been enabled!");
+        this.mainConfigManager = new MainConfigManager(this);
+        this.db = new ManageDatabase();
+        db.createTable();
+        Bukkit.getConsoleSender().sendMessage(MessageUtils.translateColor(prefix+"&ahas been enabled!"));
     }
 
     public void onDisable(){
-        Bukkit.getConsoleSender().sendMessage("Permadeath has been disabled!");
+        Bukkit.getConsoleSender().sendMessage(MessageUtils.translateColor(prefix+"&chas been disabled!"));
+        try {
+            db.conn.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public void registerCommands(){
@@ -25,5 +47,14 @@ public class Permadeath extends JavaPlugin {
     }
     public void registerEvents(){
         getServer().getPluginManager().registerEvents(new PlayerListener(this),this);
+        getServer().getPluginManager().registerEvents(new EntityListener(this),this);
+    }
+
+    public ManageDatabase getDb() {
+        return db;
+    }
+
+    public MainConfigManager getMainConfigManager() {
+        return mainConfigManager;
     }
 }
