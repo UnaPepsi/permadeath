@@ -4,7 +4,7 @@ import org.bukkit.ChatColor;
 
 public class MessageUtils {
 
-    public static String translateColor(String message){
-        return ChatColor.translateAlternateColorCodes('&',message);
+    public static String translateColor(String message, Object... args){
+        return ChatColor.translateAlternateColorCodes('&',String.format(message,args));
     }
 }

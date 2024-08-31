@@ -1,12 +1,12 @@
 package pd.guimx.commands;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import pd.guimx.Permadeath;
-import pd.guimx.utils.CustomSkeletons;
 import pd.guimx.utils.MessageUtils;
 
 
@@ -26,7 +26,7 @@ public class MainCommand implements CommandExecutor {
         } else if ("version".equalsIgnoreCase(args[0])) {
             sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"currently in version "+permadeath.version));
         } else if ("afkban".equalsIgnoreCase(args[0]) || "unban".equalsIgnoreCase(args[0]) ||
-                    "setday".equalsIgnoreCase(args[0])) {
+                    "setday".equalsIgnoreCase(args[0]) || "tpworld".equalsIgnoreCase(args[0])){
                         subCommandHandler(sender,args[0],args);
         } else if ("reload".equalsIgnoreCase(args[0])) {
             if (!sender.hasPermission("pd.reload")){
@@ -97,6 +97,11 @@ public class MainCommand implements CommandExecutor {
                 sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix + "&aNow on day: &c" + permadeath.getMainConfigManager().getDay()));
                 sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"Please remember that if you wish to change how mobs spawn you must change so " +
                         "manually and restart the server"));
+            }
+        }else if ("tpworld".equalsIgnoreCase(command)){
+            if (sender instanceof Player player){
+                Location location = new Location(Bukkit.getWorld(args[1]),0,100,0);
+                player.teleport(location);
             }
         }
     }

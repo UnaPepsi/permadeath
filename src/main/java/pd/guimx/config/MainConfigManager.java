@@ -8,6 +8,7 @@ public class MainConfigManager {
     private Permadeath permadeath;
     private int day;
     private int minPlayersSleep;
+    private int deathTrainSeconds;
 
     public MainConfigManager(Permadeath permadeath){
         this.permadeath = permadeath;
@@ -20,6 +21,7 @@ public class MainConfigManager {
         FileConfiguration config = configFile.getConfig();
         this.day = config.getInt("config.day");
         this.minPlayersSleep = config.getInt("config.minimum_players_sleep_needed");
+        this.deathTrainSeconds = config.getInt("config.death_train_seconds");
     }
 
     public void reloadConfig(){
@@ -38,5 +40,8 @@ public class MainConfigManager {
     }
     public int getMinPlayersSleep() {
         return minPlayersSleep;
+    }
+    public int getDeathTrainSeconds() {
+        return deathTrainSeconds;
     }
 }

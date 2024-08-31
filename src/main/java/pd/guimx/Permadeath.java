@@ -24,8 +24,10 @@ public class Permadeath extends JavaPlugin {
     private ManageDatabase db;
 
     private MainConfigManager mainConfigManager;
+    private PlayerListener playerListener;
 
     public void onEnable(){
+        this.playerListener = new PlayerListener(this);
         this.mainConfigManager = new MainConfigManager(this);
         this.db = new ManageDatabase();
         db.createTable();
@@ -48,7 +50,7 @@ public class Permadeath extends JavaPlugin {
         this.getCommand("permadeath").setExecutor(new MainCommand(this));
     }
     public void registerEvents(){
-        getServer().getPluginManager().registerEvents(new PlayerListener(this),this);
+        getServer().getPluginManager().registerEvents(playerListener,this);
         getServer().getPluginManager().registerEvents(new EntityListener(this),this);
     }
 
@@ -68,5 +70,9 @@ public class Permadeath extends JavaPlugin {
 
     public MainConfigManager getMainConfigManager() {
         return mainConfigManager;
+    }
+
+    public PlayerListener getPlayerListener(){
+        return playerListener;
     }
 }

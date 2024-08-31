@@ -1,3 +1,4 @@
 config:
   day: 0
   minimum_players_sleep_needed: 1 #I suck at naming pls don't kill me
+  death_train_seconds: 3600
