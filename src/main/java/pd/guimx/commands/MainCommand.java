@@ -24,17 +24,17 @@ public class MainCommand implements CommandExecutor {
             sender.sendMessage(MessageUtils.translateColor(helpCommand()));
             return true;
         } else if ("version".equalsIgnoreCase(args[0])) {
-            sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"currently in version "+permadeath.version));
+            sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"currently in version "+permadeath.version));
         } else if ("afkban".equalsIgnoreCase(args[0]) || "unban".equalsIgnoreCase(args[0]) ||
                     "setday".equalsIgnoreCase(args[0]) || "tpworld".equalsIgnoreCase(args[0])){
                         subCommandHandler(sender,args[0],args);
         } else if ("reload".equalsIgnoreCase(args[0])) {
             if (!sender.hasPermission("pd.reload")){
-                sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"&cYou need &7pd.reload &cpermissions to run this command"));
+                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&cYou need &7pd.reload &cpermissions to run this command"));
                 return true;
             }
             permadeath.getMainConfigManager().reloadConfig();
-            sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"&aReloaded config!"));
+            sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&aReloaded config!"));
         }else{
             sender.sendMessage(MessageUtils.translateColor(helpCommand()));
         }
@@ -48,18 +48,18 @@ public class MainCommand implements CommandExecutor {
                 return;
             }
             if (args.length < 2 || args.length > 3){
-                sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix + "&cusage: /permadeath afkban <player>"));
+                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&cusage: /permadeath afkban <player>"));
             }else{
                 Player player = Bukkit.getPlayer(args[1]);
                 if(!permadeath.getDb().banOrUnbanPlayer(args[1],true)){
-                    sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"&cplayer is already banned or doesn't exist"));
+                    sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&cplayer is already banned or doesn't exist"));
                     return;
                 }
                 if (player != null) {
                     String reason = MessageUtils.translateColor("&c&lPERMADEATH!&r\nYou have died for being AFK.");
                     player.kickPlayer(reason);
                 }
-                sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"&cbanned "+args[1]));
+                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&cbanned "+args[1]));
             }
         }else if ("unban".equalsIgnoreCase(command)) {
             if (!sender.hasPermission("pd.unban")){
@@ -67,13 +67,13 @@ public class MainCommand implements CommandExecutor {
                 return;
             }
             if (args.length < 2 || args.length > 3){
-                sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix + "&cusage: /permadeath unban <player>"));
+                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&cusage: /permadeath unban <player>"));
             }else{
                 if(!permadeath.getDb().banOrUnbanPlayer(args[1],false)){
-                    sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"&cplayer is already unbanned or doesn't exist"));
+                    sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&cplayer is already unbanned or doesn't exist"));
                     return;
                 }
-                sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"&aunbanned "+args[1]));
+                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&aunbanned "+args[1]));
             }
         } else if ("setday".equalsIgnoreCase(command)) {
             if (!sender.hasPermission("pd.set")){
@@ -81,7 +81,7 @@ public class MainCommand implements CommandExecutor {
                 return;
             }
             if (args.length < 2 || args.length > 3){
-                sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix + "&cusage: /permadeath setday <day>"));
+                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&cusage: /permadeath setday <day>"));
             }else {
                 int day;
                 try {
@@ -91,14 +91,18 @@ public class MainCommand implements CommandExecutor {
                     }
                     permadeath.getMainConfigManager().setDay(day);
                 } catch (NumberFormatException e) {
-                    sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix + "&cday must be a valid Integer"));
+                    sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&cday must be a valid Integer"));
                     return;
                 }
-                sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix + "&aNow on day: &c" + permadeath.getMainConfigManager().getDay()));
-                sender.sendMessage(MessageUtils.translateColor(Permadeath.prefix+"Please remember that if you wish to change how mobs spawn you must change so " +
+                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&aNow on day: &c" + permadeath.getMainConfigManager().getDay()));
+                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"Please remember that if you wish to change how mobs spawn you must change so " +
                         "manually and restart the server"));
             }
         }else if ("tpworld".equalsIgnoreCase(command)){
+            if (!sender.hasPermission("pd.tpworld")){
+                sender.sendMessage(MessageUtils.translateColor("&cYou need &7pd.tpworld &cpermissions to run this command"));
+                return;
+            }
             if (sender instanceof Player player){
                 Location location = new Location(Bukkit.getWorld(args[1]),0,100,0);
                 player.teleport(location);

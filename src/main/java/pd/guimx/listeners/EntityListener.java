@@ -397,7 +397,7 @@ public class EntityListener implements Listener {
     @EventHandler
     public void onDamage(EntityDamageEvent e){
         Entity entity = e.getEntity();
-        if (entity instanceof EnderCrystal){
+        if (entity instanceof EnderCrystal || "world_the_end".equals(entity.getWorld())){
             enderCrystalLocations.add(entity.getLocation());
             Bukkit.getScheduler().runTaskLater(permadeath, () -> {
                 entity.getWorld().spawn(entity.getLocation(), EntityType.GHAST.getEntityClass());

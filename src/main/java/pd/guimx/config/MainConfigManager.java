@@ -3,12 +3,15 @@ package pd.guimx.config;
 import org.bukkit.configuration.file.FileConfiguration;
 import pd.guimx.Permadeath;
 
+import java.util.HashMap;
+
 public class MainConfigManager {
     private CustomConfig configFile;
     private Permadeath permadeath;
     private int day;
     private int minPlayersSleep;
     private int deathTrainSeconds;
+    private HashMap<String,String> messages = new HashMap<>();
 
     public MainConfigManager(Permadeath permadeath){
         this.permadeath = permadeath;
@@ -22,6 +25,23 @@ public class MainConfigManager {
         this.day = config.getInt("config.day");
         this.minPlayersSleep = config.getInt("config.minimum_players_sleep_needed");
         this.deathTrainSeconds = config.getInt("config.death_train_seconds");
+        messages.put("prefix",config.getString("messages.prefix"));
+        messages.put("player_banned",config.getString("messages.player_banned"));
+        messages.put("player_joined",config.getString("messages.player_joined"));
+        messages.put("texture_pack",config.getString("messages.texture_pack"));
+        messages.put("texture_pack_denied",config.getString("messages.texture_pack_denied"));
+        messages.put("current_day",config.getString("messages.current_day"));
+        messages.put("permadeath_title",config.getString("messages.permadeath_title"));
+        messages.put("permadeath_subtitle",config.getString("messages.permadeath_subtitle"));
+        messages.put("death_train_enabled",config.getString("messages.death_train_enabled"));
+        messages.put("permadeath_kick_reason",config.getString("messages.permadeath_kick_reason"));
+        messages.put("death_train",config.getString("messages.death_train"));
+        messages.put("sleeping_disabled",config.getString("messages.sleeping_disabled"));
+        messages.put("sleeping_disabled_deathtrain",config.getString("messages.sleeping_disabled_deathtrain"));
+        messages.put("upgrade_netherite_failed",config.getString("messages.upgrade_netherite_failed"));
+        messages.put("totem_failed",config.getString("messages.totem_failed"));
+        messages.put("totem_worked",config.getString("messages.totem_worked"));
+        messages.put("bed_anchor_disabled_end",config.getString("messages.bed_anchor_disabled_end"));
     }
 
     public void reloadConfig(){
@@ -43,5 +63,8 @@ public class MainConfigManager {
     }
     public int getDeathTrainSeconds() {
         return deathTrainSeconds;
+    }
+    public HashMap<String,String> getMessages(){
+        return messages;
     }
 }

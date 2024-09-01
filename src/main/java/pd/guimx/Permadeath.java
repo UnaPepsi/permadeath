@@ -15,7 +15,7 @@ import java.sql.SQLException;
 
 public class Permadeath extends JavaPlugin {
 
-    public static String prefix = "&8[&4&lPermadeath&r&8]&r ";
+    public String prefix;
     public String version = getDescription().getVersion();
     private ManageDatabase db;
 
@@ -25,6 +25,7 @@ public class Permadeath extends JavaPlugin {
     public void onEnable(){
         this.playerListener = new PlayerListener(this);
         this.mainConfigManager = new MainConfigManager(this);
+        this.prefix = mainConfigManager.getMessages().get("prefix");
         this.db = new ManageDatabase();
         db.createTable();
         worldRules();
