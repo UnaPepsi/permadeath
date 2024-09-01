@@ -3,8 +3,6 @@ package pd.guimx;
 import org.bukkit.Bukkit;
 import org.bukkit.Difficulty;
 import org.bukkit.GameRule;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import pd.guimx.commands.MainCommand;
 import pd.guimx.config.MainConfigManager;
@@ -13,8 +11,6 @@ import pd.guimx.listeners.PlayerListener;
 import pd.guimx.utils.ManageDatabase;
 import pd.guimx.utils.MessageUtils;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.SQLException;
 
 public class Permadeath extends JavaPlugin {

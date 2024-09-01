@@ -113,6 +113,9 @@ public class MainCommand implements CommandExecutor {
                 "&7/permadeath help &8- &7Displays this help message\n" +
                 "&7/permadeath version &8- &7Displays the plugin version\n" +
                 "&7/permadeath afkban &8- &7Bans someone for being AFK\n" +
+                "&7/permadeath unban &8- &7Unbans a permabanned player\n" +
+                "&7/permadeath setday &8- &7Manually sets the current day\n" +
+                "&7/permadeath reload &8- &7Reloads the plugin's config.yml\n" +
                 "&8&m----------------------------------------";
     }
 }

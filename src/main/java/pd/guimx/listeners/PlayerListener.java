@@ -1,13 +1,23 @@
 package pd.guimx.listeners;
 
+import io.papermc.paper.event.player.PlayerArmSwingEvent;
+import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.Skull;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.type.Bed;
+import org.bukkit.block.data.type.RespawnAnchor;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.DragonBattle;
+import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityResurrectEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -17,6 +27,7 @@ import org.bukkit.event.inventory.SmithItemEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent.Status;
 import org.bukkit.inventory.SmithingInventory;
+import org.bukkit.util.Vector;
 import pd.guimx.Permadeath;
 import pd.guimx.utils.MessageUtils;
 
@@ -195,5 +206,43 @@ public class PlayerListener implements Listener{
                         e.getEntity().getName(),randomInt+1,probability));
             }
         }
+    }
+
+    @EventHandler
+    public void onMove(PlayerMoveEvent e){
+        Location loc = e.getTo().clone();
+        loc.setY(e.getTo().getY()-0.1);
+        if (loc.getBlock().getType() == Material.BEDROCK){
+            loc.add(0,60,0);
+            e.getPlayer().setVelocity(new Vector(0,60,0));
+        }
+    }
+
+    @EventHandler
+    public void onRightCick(BlockPlaceEvent e){
+        BlockData blockData = e.getBlockPlaced().getBlockData();
+        if ((blockData instanceof Bed || blockData instanceof RespawnAnchor)
+            && "world_the_end".equalsIgnoreCase(e.getPlayer().getWorld().getName())){
+            e.getPlayer().sendMessage(MessageUtils.translateColor(Permadeath.prefix+"&cThis is disabled in The End"));
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onTeleport(PlayerTeleportEvent e){
+        World world = e.getTo().getWorld();
+        if ("world_the_end".equals(world.getName())){
+            DragonBattle dragonBattle = world.getEnderDragonBattle();
+            if (dragonBattle == null){
+                return;
+            }
+            EnderDragon dragon = dragonBattle.getEnderDragon();
+            if (dragon != null && !"&6&lPERMADEATH DEMON".equalsIgnoreCase(dragon.getBossBar().getTitle())){
+                if (dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()/dragon.getHealth() < 2){
+                    dragon.getBossBar().setColor(BarColor.BLUE);
+                }
+                dragon.customName(Component.text(MessageUtils.translateColor("&6&lPERMADEATH DEMON")));
+            }
+       }
     }
 }

@@ -1,10 +1,13 @@
 package pd.guimx.listeners;
 
 import io.papermc.paper.event.entity.EntityMoveEvent;
+import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.ShulkerBox;
+import org.bukkit.block.data.type.TNT;
+import org.bukkit.boss.BarColor;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
@@ -15,9 +18,12 @@ import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 import pd.guimx.Permadeath;
 import pd.guimx.utils.CustomEntities;
+import pd.guimx.utils.MessageUtils;
 
+import java.awt.geom.Area;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -29,6 +35,8 @@ public class EntityListener implements Listener {
     private final List<PotionEffect> spiderEffects;
     private final List<PotionEffect> day21Potions;
     private final List<PotionEffect> ravagerEffects;
+    private List<Location> enderCrystalLocations = new ArrayList<>();
+    private boolean isEnderDragonEnraged = false;
     public EntityListener(Permadeath permadeath){
         this.permadeath = permadeath;
         spiderEffects = new ArrayList<>(){{
@@ -111,7 +119,13 @@ public class EntityListener implements Listener {
                 ravager.addPotionEffects(ravagerEffects);
             }
         }else if (entity instanceof Ghast ghast){
-            ghast.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(random.nextInt(40,61));
+            int baseHealth;
+            if ("world_the_end".equalsIgnoreCase(ghast.getWorld().getName())){
+                baseHealth = 100;
+            }else{
+                baseHealth = random.nextInt(40,61);
+            }
+            ghast.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(baseHealth);
             ghast.setHealth(ghast.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue());
         }else if (entity instanceof Squid squid){
             if (day > 29) {
@@ -197,12 +211,27 @@ public class EntityListener implements Listener {
                 ironGolem.addPotionEffect(new PotionEffect(PotionEffectType.SPEED,Integer.MAX_VALUE,4));
             }
         }else if (entity instanceof Enderman enderman){
-            if (day > 29){
-                if (!"world_the_end".equals(enderman.getWorld().getName())){
-                    enderman.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH,Integer.MAX_VALUE,2));
+            if (day > 29) {
+                enderman.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, 2));
+                if (!"world_the_end".equals(enderman.getWorld().getName())) {
                     return;
                 }
-                if (random.nextInt(0,100) < 15){
+                int randInt = random.nextInt(0, 100);
+                if (randInt < 2) {
+                    AtomicBoolean spawnGhast = new AtomicBoolean(true);
+                    enderman.getNearbyEntities(60,60,60).forEach(entityNear -> {
+                        if (entityNear.getType() == EntityType.GHAST){
+                            spawnGhast.set(false);
+                        }
+                    });
+                    if (spawnGhast.get()) {
+                        enderman.getWorld().spawn(enderman.getLocation(), EntityType.GHAST.getEntityClass(), spawnedEntity -> {
+                            Location loc = spawnedEntity.getLocation().clone().add(0, 40, 0);
+                            spawnedEntity.teleport(loc);
+                        });
+                        e.setCancelled(true);
+                    }
+                }else if (randInt < 15){
                     enderman.getWorld().spawn(enderman.getLocation(),EntityType.CREEPER.getEntityClass(), spawnedEntity -> {
                         Creeper creeper = (Creeper) spawnedEntity;
                         creeper.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY,Integer.MAX_VALUE,1));
@@ -214,6 +243,12 @@ public class EntityListener implements Listener {
             if (day > 29) {
                 for (int i = 0; i < 5; i++) {
                     silverfish.addPotionEffect(spiderEffects.get(random.nextInt(spiderEffects.size())));
+                }
+            }
+        }else if (entity instanceof Endermite endermite){
+            if (day > 29) {
+                for (int i = 0; i < 5; i++) {
+                    endermite.addPotionEffect(spiderEffects.get(random.nextInt(spiderEffects.size())));
                 }
             }
         }
@@ -293,6 +328,17 @@ public class EntityListener implements Listener {
                 world.createExplosion(location, 4, true);
             }
         }
+        if (shooter instanceof EnderDragon){
+            Location location;
+            if (e.getHitBlock() != null){
+                location = e.getHitBlock().getLocation();
+                location.getBlock().setType(Material.BEDROCK);
+                if (isEnderDragonEnraged) {
+                    location.add(6,5,0); //move the spider away from the dragon's breath
+                    location.getWorld().spawn(location, EntityType.SPIDER.getEntityClass());
+                }
+            }
+        }
     }
     @EventHandler
     public void onMove(EntityMoveEvent e) {
@@ -324,6 +370,11 @@ public class EntityListener implements Listener {
                 }
                 return;
             }else if (mob instanceof Golem golem){
+                if (golem instanceof IronGolem ironGolem){
+                    if (ironGolem.isPlayerCreated()){
+                        return;
+                    }
+                }
                 golem.setTarget(player);
                 golem.setAggressive(true);
             }
@@ -346,6 +397,25 @@ public class EntityListener implements Listener {
     @EventHandler
     public void onDamage(EntityDamageEvent e){
         Entity entity = e.getEntity();
+        if (entity instanceof EnderCrystal){
+            enderCrystalLocations.add(entity.getLocation());
+            Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                entity.getWorld().spawn(entity.getLocation(), EntityType.GHAST.getEntityClass());
+            },1);
+            return;
+        }
+        if (entity instanceof EnderDragon dragon){
+            if (dragon.getBossBar() == null){
+                return;
+            }
+            if (dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()/dragon.getHealth() >= 2){
+                dragon.getBossBar().setColor(BarColor.RED);
+                dragon.customName(Component.text(MessageUtils.translateColor("&c&lENRAGED PERMADEATH DEMON")));
+                this.isEnderDragonEnraged = true;
+            }else{
+                this.isEnderDragonEnraged = false;
+            }
+        }
         int day =  permadeath.getMainConfigManager().getDay();
         if (!(entity instanceof Creeper creeper) || creeper.getHealth() <= 0){
             return;
@@ -364,7 +434,7 @@ public class EntityListener implements Listener {
                         player.playSound(player,"custom:scream",5,1); //xd
                     }
                 }else {
-                    teleportLocation = loc.clone().add(random.nextInt(-10,10), 0, random.nextInt(-10,10));
+                    teleportLocation = loc.clone().add(random.nextInt(-30,30), 0, random.nextInt(-30,30));
                     teleportLocation = creeper.getWorld().getHighestBlockAt(teleportLocation).getLocation();
                     teleportLocation.setY(teleportLocation.getY() + 1);
                 }
@@ -384,4 +454,95 @@ public class EntityListener implements Listener {
             }
         }
     }
+
+    @EventHandler
+    public void onDragonPhaseChange(EnderDragonChangePhaseEvent e) {
+        EnderDragon dragon = e.getEntity();
+        EnderDragon.Phase phase = e.getCurrentPhase();
+        if (phase == EnderDragon.Phase.LAND_ON_PORTAL) {
+            //e.getEntity().getDragonBattle().resetCrystals();
+            if (!enderCrystalLocations.isEmpty() && random.nextInt(0, 100) < 10) {
+                for (Location location : enderCrystalLocations) {
+                    dragon.getWorld().spawn(location, EntityType.END_CRYSTAL.getEntityClass());
+                }
+                enderCrystalLocations.clear();
+            }else{
+                dragon.getWorld().spawn(dragon.getLocation(), EntityType.ENDERMITE.getEntityClass());
+            }
+        }else if (phase == EnderDragon.Phase.CIRCLING) {
+            float randFloat = random.nextFloat();
+            if (randFloat < 0.20) {
+                dragon.getWorld().getPlayers().forEach(p -> {
+                    p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION,20*5,1));
+                    Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                        p.getWorld().spawn(p.getLocation(),EntityType.AREA_EFFECT_CLOUD.getEntityClass(), spawnedCloud -> {
+                           AreaEffectCloud areaEffectCloud = (AreaEffectCloud) spawnedCloud;
+                           areaEffectCloud.setRadius(2.5f);
+                           areaEffectCloud.setParticle(Particle.DAMAGE_INDICATOR);
+                           areaEffectCloud.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE,1,2),true);
+                        });
+                    },20*5);
+                });
+            }else if (randFloat < 0.5) {
+                List<Location> locations = new ArrayList<>();
+                for (int i = 0; i < 6; i++) {
+                    if (i % 2 == 0) {
+                        locations.add(dragon.getLocation().clone().add(i - 3, 0, 0));
+                    } else {
+                        locations.add(dragon.getLocation().clone().add(0, 0, i - 3));
+                    }
+                }
+                for (Location location : locations) {
+                    dragon.getWorld().spawn(location, EntityType.TNT.getEntityClass(), spawnedEntity -> {
+                        TNTPrimed tntPrimed = (TNTPrimed) spawnedEntity;
+                        tntPrimed.setSource(dragon);
+                        tntPrimed.setYield(8);
+                    });
+                }
+            } else {
+                for (int i = 1; i < 11; i++) {
+                    Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                        Location location = dragon.getLocation().clone();
+                        location.setY(location.getWorld().getHighestBlockYAt(location));
+                        dragon.getWorld().spawn(location, EntityType.LIGHTNING_BOLT.getEntityClass());
+                        dragon.getWorld().spawn(location, EntityType.TNT.getEntityClass(),spawnedEntity -> {
+                            TNTPrimed tntPrimed = (TNTPrimed) spawnedEntity;
+                            tntPrimed.setSource(dragon);
+                            tntPrimed.setYield(4);
+                            tntPrimed.setFuseTicks(1);
+                        });
+                    },i*20);
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onExplode(EntityExplodeEvent e){
+        Entity entity = e.getEntity();
+        if (entity instanceof Creeper creeper && "world_the_end".equalsIgnoreCase(creeper.getWorld().getName())){
+            Bukkit.getScheduler().runTaskLater(permadeath,() -> {
+                creeper.getNearbyEntities(5,5,5).forEach(nearbyEntity -> {
+                    if (nearbyEntity instanceof AreaEffectCloud areaEffectCloud){
+                        areaEffectCloud.remove();
+                    }
+                });
+            },1);
+            return;
+        }
+        if (entity instanceof TNTPrimed tntPrimed && tntPrimed.getSource() instanceof EnderDragon){
+            List<Block> blockList = e.blockList();
+            blockList.forEach(block -> {
+                Location location;
+                location = block.getLocation();
+                block.getWorld().spawn(location, EntityType.FALLING_BLOCK.getEntityClass(),spawnedEntity -> {
+                    FallingBlock fallingBlock = (FallingBlock) spawnedEntity;
+                    fallingBlock.setBlockData(block.getBlockData());
+                    fallingBlock.setVelocity(new Vector(random.nextFloat(-1,1),1,
+                            random.nextFloat(-1,1)));
+                });
+            });
+        }
+    }
+
 }
