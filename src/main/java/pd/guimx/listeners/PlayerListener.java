@@ -60,7 +60,7 @@ public class PlayerListener implements Listener{
                 player.getName()));
         permadeath.getDb().addUser(player.getName());
         player.setResourcePack("https://fun.guimx.me/r/permadeath.zip?compress=false",
-              HexFormat.of().parseHex("abfaa1a8b810e81f85aa542166aaa8950f19c7c7"),permadeath.getMainConfigManager().getMessages().get("texture_pack"),false);
+              HexFormat.of().parseHex("abfaa1a8b810e81f85aa542166aaa8950f19c7c7"),MessageUtils.translateColor(permadeath.getMainConfigManager().getMessages().get("texture_pack")),false);
         player.sendMessage(MessageUtils.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("current_day"),
                 permadeath.getMainConfigManager().getDay()));
     }

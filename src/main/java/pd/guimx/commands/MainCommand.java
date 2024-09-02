@@ -13,7 +13,6 @@ import pd.guimx.utils.MessageUtils;
 public class MainCommand implements CommandExecutor {
 
     public Permadeath permadeath;
-
     public MainCommand(Permadeath permadeath){
         this.permadeath = permadeath;
     }
@@ -24,17 +23,19 @@ public class MainCommand implements CommandExecutor {
             sender.sendMessage(MessageUtils.translateColor(helpCommand()));
             return true;
         } else if ("version".equalsIgnoreCase(args[0])) {
-            sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"currently in version "+permadeath.version));
+            sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "currently in version " + permadeath.version));
         } else if ("afkban".equalsIgnoreCase(args[0]) || "unban".equalsIgnoreCase(args[0]) ||
-                    "setday".equalsIgnoreCase(args[0]) || "tpworld".equalsIgnoreCase(args[0])){
-                        subCommandHandler(sender,args[0],args);
+                "setday".equalsIgnoreCase(args[0]) || "tpworld".equalsIgnoreCase(args[0])) {
+            subCommandHandler(sender, args[0], args);
         } else if ("reload".equalsIgnoreCase(args[0])) {
-            if (!sender.hasPermission("pd.reload")){
-                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&cYou need &7pd.reload &cpermissions to run this command"));
+            if (!sender.hasPermission("pd.reload")) {
+                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&cYou need &7pd.reload &cpermissions to run this command"));
                 return true;
             }
             permadeath.getMainConfigManager().reloadConfig();
-            sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&aReloaded config!"));
+            sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&aReloaded config!"));
+        }else if ("hour".equalsIgnoreCase(args[0])){
+            sender.sendMessage("hour "+permadeath.getMainConfigManager().getHour());
         }else{
             sender.sendMessage(MessageUtils.translateColor(helpCommand()));
         }
@@ -89,7 +90,7 @@ public class MainCommand implements CommandExecutor {
                     if (day < 0) {
                         throw new NumberFormatException();
                     }
-                    permadeath.getMainConfigManager().setDay(day);
+                    permadeath.getMainConfigManager().setHour(day*24);
                 } catch (NumberFormatException e) {
                     sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&cday must be a valid Integer"));
                     return;

@@ -31,6 +31,7 @@ public class Permadeath extends JavaPlugin {
         worldRules();
         registerCommands();
         registerEvents();
+        startCounting();
         Bukkit.getConsoleSender().sendMessage(MessageUtils.translateColor(prefix+"&ahas been enabled!"));
     }
 
@@ -71,5 +72,8 @@ public class Permadeath extends JavaPlugin {
 
     public PlayerListener getPlayerListener(){
         return playerListener;
+    }
+    private void startCounting(){
+        Bukkit.getScheduler().runTaskTimer(this, () -> mainConfigManager.setHour(mainConfigManager.getHour()+1),0,3600*20); //every hour
     }
 }

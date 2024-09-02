@@ -8,7 +8,7 @@ import java.util.HashMap;
 public class MainConfigManager {
     private CustomConfig configFile;
     private Permadeath permadeath;
-    private int day;
+    private int hour;
     private int minPlayersSleep;
     private int deathTrainSeconds;
     private HashMap<String,String> messages = new HashMap<>();
@@ -22,7 +22,7 @@ public class MainConfigManager {
 
     public void loadConfig(){
         FileConfiguration config = configFile.getConfig();
-        this.day = config.getInt("config.day");
+        this.hour = config.getInt("config.hour");
         this.minPlayersSleep = config.getInt("config.minimum_players_sleep_needed");
         this.deathTrainSeconds = config.getInt("config.death_train_seconds");
         messages.put("prefix",config.getString("messages.prefix"));
@@ -49,15 +49,16 @@ public class MainConfigManager {
         loadConfig();
     }
 
-    public void setDay(int day){
-        configFile.getConfig().set("config.day",day);
+    public void setHour(int hour){
+        configFile.getConfig().set("config.hour",hour);
         configFile.saveConfig();
         reloadConfig();
     }
 
     public int getDay() {
-        return day;
+        return hour/24;
     }
+    public int getHour() {return hour;}
     public int getMinPlayersSleep() {
         return minPlayersSleep;
     }
