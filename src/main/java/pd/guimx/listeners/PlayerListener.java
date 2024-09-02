@@ -98,15 +98,15 @@ public class PlayerListener implements Listener{
             player.spigot().respawn();
             player.setGameMode(GameMode.SPECTATOR);
 
+            Bukkit.broadcastMessage(MessageUtils.translateColor(permadeath.prefix+
+                            permadeath.getMainConfigManager().getMessages().get("death_train_enabled"),
+                        permadeath.getMainConfigManager().getDeathTrainSeconds()/3600));
             String title = MessageUtils.translateColor(permadeath.getMainConfigManager().getMessages().get("permadeath_title"));
             String subtitle = String.format(permadeath.getMainConfigManager().getMessages().get("permadeath_subtitle"),player.getName());
             Bukkit.getOnlinePlayers().forEach(p -> {
                 p.sendTitle(title,subtitle,10,100,10);
                 //p.playSound(p, Sound.ENTITY_SKELETON_HORSE_DEATH,5,1);
                 p.playSound(p,"custom:permadeath",5,1);
-                Bukkit.broadcastMessage(MessageUtils.translateColor(permadeath.prefix+
-                              permadeath.getMainConfigManager().getMessages().get("death_train_enabled"),
-                        permadeath.getMainConfigManager().getDeathTrainSeconds()/3600));
             });
 
             String reason = MessageUtils.translateColor(permadeath.getMainConfigManager().getMessages().get("permadeath_kick_reason"));
