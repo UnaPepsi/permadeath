@@ -3,7 +3,9 @@ package pd.guimx.config;
 import org.bukkit.configuration.file.FileConfiguration;
 import pd.guimx.Permadeath;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class MainConfigManager {
     private CustomConfig configFile;
@@ -12,6 +14,9 @@ public class MainConfigManager {
     private int minPlayersSleep;
     private int deathTrainSeconds;
     private HashMap<String,String> messages = new HashMap<>();
+    private List<String> discordWebhooks;
+    private String discordWebhookDied;
+    private String discordWebhookTotem;
 
     public MainConfigManager(Permadeath permadeath){
         this.permadeath = permadeath;
@@ -42,6 +47,9 @@ public class MainConfigManager {
         messages.put("totem_failed",config.getString("messages.totem_failed"));
         messages.put("totem_worked",config.getString("messages.totem_worked"));
         messages.put("bed_anchor_disabled_end",config.getString("messages.bed_anchor_disabled_end"));
+        discordWebhooks = config.getStringList("config.discord_webhooks");
+        discordWebhookDied = config.getString("messages.discord_webhook_died");
+        discordWebhookTotem = config.getString("messages.discord_webhook_totem");
     }
 
     public void reloadConfig(){
@@ -67,5 +75,14 @@ public class MainConfigManager {
     }
     public HashMap<String,String> getMessages(){
         return messages;
+    }
+    public List<String> getDiscordWebhooks(){
+        return discordWebhooks;
+    }
+    public String getDiscordWebhookDied(){
+        return discordWebhookDied;
+    }
+    public String getDiscordWebhookTotem(){
+        return discordWebhookTotem;
     }
 }

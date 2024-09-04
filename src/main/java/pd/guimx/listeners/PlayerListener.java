@@ -29,6 +29,7 @@ import org.bukkit.inventory.SmithingInventory;
 import org.bukkit.util.Vector;
 import pd.guimx.Permadeath;
 import pd.guimx.utils.MessageUtils;
+import pd.guimx.utils.Webhook;
 
 import java.util.HexFormat;
 import java.util.Objects;
@@ -143,7 +144,13 @@ public class PlayerListener implements Listener{
                 });
             }, 0, 20);
         }
-
+        Bukkit.getScheduler().runTaskAsynchronously(permadeath, () -> {
+            for (String webhook : permadeath.getMainConfigManager().getDiscordWebhooks()) {
+                Webhook.sendMessage(webhook, String.format(permadeath.getMainConfigManager().getDiscordWebhookDied(),player.getName()),
+                        e.getDeathMessage(), player.getName(),
+                        permadeath.getMainConfigManager().getDay(), true);
+            }
+        });
     }
 
     @EventHandler
@@ -203,7 +210,7 @@ public class PlayerListener implements Listener{
 
     @EventHandler
     public void onTotem(EntityResurrectEvent e){
-        if (e.isCancelled()){
+        if (e.isCancelled() || !(e.getEntity() instanceof Player player)){
             return;
         }
         int day = permadeath.getMainConfigManager().getDay();
@@ -214,11 +221,18 @@ public class PlayerListener implements Listener{
                 e.setCancelled(true);
                 Bukkit.broadcastMessage(MessageUtils.translateColor(permadeath.prefix+
                                 permadeath.getMainConfigManager().getMessages().get("totem_failed"),
-                        e.getEntity().getName()));
+                        player.getName()));
             }else{
-                Bukkit.broadcastMessage(MessageUtils.translateColor(
-                        permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("totem_worked"),
-                        e.getEntity().getName(),randomInt+1,probability));
+                String totemWorked = String.format(permadeath.getMainConfigManager().getMessages().get("totem_worked"),
+                        e.getEntity().getName(),randomInt+1,probability);
+                Bukkit.broadcastMessage(MessageUtils.translateColor(permadeath.prefix+totemWorked));
+                Bukkit.getScheduler().runTaskAsynchronously(permadeath,() -> {
+                    for (String webhook : permadeath.getMainConfigManager().getDiscordWebhooks()) {
+                        Webhook.sendMessage(webhook, String.format(permadeath.getMainConfigManager().getDiscordWebhookTotem(),player.getName()),
+                                totemWorked.replaceAll("&.",""), player.getName(),
+                                permadeath.getMainConfigManager().getDay(), false);
+                    }
+                });
             }
         }
     }

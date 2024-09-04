@@ -2,6 +2,7 @@ config:
   hour: 0
   minimum_players_sleep_needed: 1 #I suck at naming pls don't kill me
   death_train_seconds: 3600
+  discord_webhooks: []
 messages:
   prefix: "&8[&4&lPermadeath&r&8]&r "
   player_banned: "&c&lPERMADEATH!&r\nYou have died and are no longer allowed to join back" #f*ck no im not making it a list
@@ -20,3 +21,5 @@ messages:
   totem_failed: "&cHow unfortunate. %s's totem did not work. Oh well, too bad"
   totem_worked: "&7%s activated a Totem of Undying. Luckily, they have survived. (%d > %d)"
   bed_anchor_disabled_end: "&cThis is disabled in The End"
+  discord_webhook_died: "%s HAS DIED!"
+  discord_webhook_totem: "%s popped a Totem!"
