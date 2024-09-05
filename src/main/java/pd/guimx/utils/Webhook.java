@@ -36,6 +36,7 @@ public class Webhook {
             embeds.add(embed);
             body.put("embeds",embeds);
             body.put("username","PERMADEATH");
+            body.put("avatar_url","https://fun.guimx.me/r/j4bIdJE2VO.png?compress=false");
             String json = gson.toJson(body);
 
             URL url = new URL(webhookUrl+"?wait=true");

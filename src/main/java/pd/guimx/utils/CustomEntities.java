@@ -103,6 +103,7 @@ public class CustomEntities {
         ItemStack arrow = new ItemStack(Material.TIPPED_ARROW);
         PotionMeta potionMeta = (PotionMeta) arrow.getItemMeta();
         potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE,1,1),true);
+        potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.LEVITATION,20*5,1),true); //thanks tokaua for the idea lol
         arrow.setItemMeta(potionMeta);
         skelly.getEquipment().setItemInOffHand(arrow);
         return skelly;
@@ -129,6 +130,7 @@ public class CustomEntities {
         ItemStack arrow = new ItemStack(Material.TIPPED_ARROW);
         PotionMeta potionMeta = (PotionMeta) arrow.getItemMeta();
         potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE,1,1),true);
+        potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.LEVITATION,20*5,1),true); //thanks tokaua for the idea lol
         arrow.setItemMeta(potionMeta);
         skelly.getEquipment().setItemInOffHand(arrow);
         return skelly;
@@ -146,6 +148,7 @@ public class CustomEntities {
         ItemStack arrow = new ItemStack(Material.TIPPED_ARROW);
         PotionMeta potionMeta = (PotionMeta) arrow.getItemMeta();
         potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE,1,1),true);
+        potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.LEVITATION,20*5,1),true); //thanks tokaua for the idea lol
         arrow.setItemMeta(potionMeta);
         skelly.getEquipment().setItemInOffHand(arrow);
         return skelly;
@@ -171,6 +174,7 @@ public class CustomEntities {
         ItemStack arrow = new ItemStack(Material.TIPPED_ARROW);
         PotionMeta potionMeta = (PotionMeta) arrow.getItemMeta();
         potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE,1,1),true);
+        potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.LEVITATION,20*5,1),true); //thanks tokaua for the idea lol
         arrow.setItemMeta(potionMeta);
         skelly.getEquipment().setItemInOffHand(arrow);
         return skelly;
