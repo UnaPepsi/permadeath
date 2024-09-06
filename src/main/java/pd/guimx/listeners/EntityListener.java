@@ -520,7 +520,7 @@ public class EntityListener implements Listener {
     @EventHandler
     public void onExplode(EntityExplodeEvent e){
         Entity entity = e.getEntity();
-        if (entity instanceof Creeper creeper && "world_the_end".equalsIgnoreCase(creeper.getWorld().getName())){
+        if (entity instanceof Creeper creeper){
             Bukkit.getScheduler().runTaskLater(permadeath,() -> {
                 creeper.getNearbyEntities(5,5,5).forEach(nearbyEntity -> {
                     if (nearbyEntity instanceof AreaEffectCloud areaEffectCloud){
