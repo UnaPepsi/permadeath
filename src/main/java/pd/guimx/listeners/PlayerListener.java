@@ -140,8 +140,8 @@ public class PlayerListener implements Listener{
                             permadeath.getMainConfigManager().getMessages().get("death_train"),
                             deathTrainSecondsRemaining[0] / 3600, (deathTrainSecondsRemaining[0] % 3600) / 60, deathTrainSecondsRemaining[0] % 60)
                     ));
-                    deathTrainSecondsRemaining[0]--;
                 });
+                deathTrainSecondsRemaining[0]--;
             }, 0, 20);
         }
         Bukkit.getScheduler().runTaskAsynchronously(permadeath, () -> {
