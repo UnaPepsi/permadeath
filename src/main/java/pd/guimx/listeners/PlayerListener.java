@@ -80,8 +80,12 @@ public class PlayerListener implements Listener{
     public void onDeath(PlayerDeathEvent e){
         this.isDeathTrain = true;
         Player player = e.getEntity();
-
         Location location = player.getLocation();
+
+        String coordinates = String.format("x: %d, y: %d, z: %d",
+                location.getBlockX(),location.getBlockY(),location.getBlockZ());
+        e.setDeathMessage(e.getDeathMessage()+" - "+coordinates);
+
         Block block = location.getBlock();
         block.setType(Material.NETHER_BRICK_FENCE);
 
