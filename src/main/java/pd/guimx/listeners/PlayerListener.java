@@ -71,7 +71,7 @@ public class PlayerListener implements Listener{
         Status status = e.getStatus();
         if (status == Status.DECLINED){
             e.getPlayer().kickPlayer(MessageUtils.translateColor(permadeath.prefix+
-                    permadeath.getMainConfigManager().getMessages().get("texture_pack_declined")));
+                    permadeath.getMainConfigManager().getMessages().get("texture_pack_denied")));
         }
 
 
