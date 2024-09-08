@@ -3,10 +3,11 @@ config:
   minimum_players_sleep_needed: 1 #I suck at naming pls don't kill me
   death_train_seconds: 3600
   discord_webhooks: []
+  starting_lives: 3
 messages:
   prefix: "&8[&4&lPermadeath&r&8]&r "
   player_banned: "&c&lPERMADEATH!&r\nYou have died and are no longer allowed to join back" #f*ck no im not making it a list
-  player_joined: "&c%s has joined Hell." #yeah im also not using %player% hell nawh
+  player_joined: "&c%s has joined Hell. (%d lifes)" #yeah im also not using %player% hell nawh
   texture_pack: "&e&lPlease accept the resourcepack for improved experience"
   texture_pack_denied: "Please accept the resource pack."
   current_day: "&aCurrently in day: &c%d"
@@ -14,6 +15,7 @@ messages:
   permadeath_subtitle: "%s has died!"
   death_train_enabled: "&cDEATH TRAIN ACTIVE FOR %d HOUR(S)"
   permadeath_kick_reason: "&c&lPERMADEATH&r\nYou have died. GGWP"
+  remaining_lifes: "&c&lYOU HAVE %d LIFE(S) REMAINING. BE CAREFUL"
   death_train: "&7Death Train: %02d:%02d:%02d"
   sleeping_disabled: "&cSleeping is disabled"
   sleeping_disabled_deathtrain: "&cYou can't sleep. It's Death Train"

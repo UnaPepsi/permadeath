@@ -18,8 +18,7 @@ public class ManageDatabase {
         try {
             String sql = "CREATE TABLE IF NOT EXISTS players (" +
                     "player TEXT NOT NULL PRIMARY KEY," +
-                    "afk REAL," +
-                    "isBanned BOOLEAN," +
+                    "lifes INTEGER NOT NULL," +
                     "UNIQUE (player COLLATE NOCASE))";
             Statement stmt = conn.createStatement();
             stmt.execute(sql);
@@ -42,10 +41,10 @@ public class ManageDatabase {
     }
     public boolean userBanned(String player){
         try{
-            String sql = "SELECT * FROM players WHERE player = ? AND isBanned = 1";
+            String sql = "SELECT * FROM players WHERE player = ? AND lifes <= 0";
             PreparedStatement pstmt = conn.prepareStatement(sql);
             pstmt.setString(1,player);
-            ResultSet rs = pstmt.executeQuery();;
+            ResultSet rs = pstmt.executeQuery();
             return rs.next();
         }catch (SQLException e) {
             e.printStackTrace();
@@ -53,31 +52,32 @@ public class ManageDatabase {
         return false;
     }
 
-    public void addUser(String player){
+    public void addUser(String player, int startingLifes){
         if (userExists(player)){
             return;
         }
         try{
-            String sql = "INSERT INTO players VALUES (?, 0, 0)";
+            String sql = "INSERT INTO players VALUES (?, ?)";
             PreparedStatement pstmt = conn.prepareStatement(sql);
             pstmt.setString(1,player);
+            pstmt.setInt(2,startingLifes);
             pstmt.executeUpdate();
         }catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    public boolean banOrUnbanPlayer(String player, boolean op){
-        //Returns true if ran without issue, false if player already banned/unbanned or doesn't exist
-        if (!userExists(player) || userBanned(player)==op){
+    public boolean setLifes(String player, int newLifes){
+        //Returns true if ran without issue, false if player doesn't exist
+        if (!userExists(player)){
             return false;
         }
         try{
             String sql = "UPDATE players " +
-                    "SET isBanned = ? " +
+                    "SET lifes = ? " +
                     "WHERE player = ?";
             PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setBoolean(1,op);
+            pstmt.setInt(1,newLifes);
             pstmt.setString(2,player);
             pstmt.executeUpdate();
             return true;
@@ -85,5 +85,21 @@ public class ManageDatabase {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public int getLifes(String player){
+        if (!userExists(player)){
+            return -1;
+        }
+        try{
+            String sql = "SELECT lifes FROM players WHERE player = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1,player);
+            ResultSet rs = pstmt.executeQuery();
+            return rs.getInt("lifes");
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+        return -1;
     }
 }

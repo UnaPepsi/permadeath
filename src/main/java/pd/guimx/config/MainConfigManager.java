@@ -17,6 +17,8 @@ public class MainConfigManager {
     private List<String> discordWebhooks;
     private String discordWebhookDied;
     private String discordWebhookTotem;
+    private int startingLives;
+    private String remainingLifes;
 
     public MainConfigManager(Permadeath permadeath){
         this.permadeath = permadeath;
@@ -50,6 +52,8 @@ public class MainConfigManager {
         discordWebhooks = config.getStringList("config.discord_webhooks");
         discordWebhookDied = config.getString("messages.discord_webhook_died");
         discordWebhookTotem = config.getString("messages.discord_webhook_totem");
+        startingLives = config.getInt("config.starting_lives");
+        remainingLifes = config.getString("messages.remaining_lifes");
     }
 
     public void reloadConfig(){
@@ -84,5 +88,11 @@ public class MainConfigManager {
     }
     public String getDiscordWebhookTotem(){
         return discordWebhookTotem;
+    }
+    public int getStartingLives(){
+        return startingLives;
+    }
+    public String getRemainingLifes(){
+        return remainingLifes;
     }
 }

@@ -24,8 +24,8 @@ public class MainCommand implements CommandExecutor {
             return true;
         } else if ("version".equalsIgnoreCase(args[0])) {
             sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "currently in version " + permadeath.version));
-        } else if ("afkban".equalsIgnoreCase(args[0]) || "unban".equalsIgnoreCase(args[0]) ||
-                "setday".equalsIgnoreCase(args[0]) || "tpworld".equalsIgnoreCase(args[0])) {
+        } else if ("setday".equalsIgnoreCase(args[0]) || "tpworld".equalsIgnoreCase(args[0]) ||
+                "setlifes".equalsIgnoreCase(args[0])) {
             subCommandHandler(sender, args[0], args);
         } else if ("reload".equalsIgnoreCase(args[0])) {
             if (!sender.hasPermission("pd.reload")) {
@@ -43,40 +43,7 @@ public class MainCommand implements CommandExecutor {
     }
 
     private void subCommandHandler(CommandSender sender, String command, String[] args){
-        if ("afkban".equalsIgnoreCase(command)) {
-            if (!sender.hasPermission("pd.ban")){
-                sender.sendMessage(MessageUtils.translateColor("&cYou need &7pd.ban &cpermissions to run this command"));
-                return;
-            }
-            if (args.length < 2 || args.length > 3){
-                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&cusage: /permadeath afkban <player>"));
-            }else{
-                Player player = Bukkit.getPlayer(args[1]);
-                if(!permadeath.getDb().banOrUnbanPlayer(args[1],true)){
-                    sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&cplayer is already banned or doesn't exist"));
-                    return;
-                }
-                if (player != null) {
-                    String reason = MessageUtils.translateColor("&c&lPERMADEATH!&r\nYou have died for being AFK.");
-                    player.kickPlayer(reason);
-                }
-                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&cbanned "+args[1]));
-            }
-        }else if ("unban".equalsIgnoreCase(command)) {
-            if (!sender.hasPermission("pd.unban")){
-                sender.sendMessage(MessageUtils.translateColor("&cYou need &7pd.unban &cpermissions to run this command"));
-                return;
-            }
-            if (args.length < 2 || args.length > 3){
-                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&cusage: /permadeath unban <player>"));
-            }else{
-                if(!permadeath.getDb().banOrUnbanPlayer(args[1],false)){
-                    sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&cplayer is already unbanned or doesn't exist"));
-                    return;
-                }
-                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&aunbanned "+args[1]));
-            }
-        } else if ("setday".equalsIgnoreCase(command)) {
+        if ("setday".equalsIgnoreCase(command)) {
             if (!sender.hasPermission("pd.set")){
                 sender.sendMessage(MessageUtils.translateColor("&cYou need &7pd.set &cpermissions to run this command"));
                 return;
@@ -108,6 +75,27 @@ public class MainCommand implements CommandExecutor {
                 Location location = new Location(Bukkit.getWorld(args[1]),0,100,0);
                 player.teleport(location);
             }
+        }else if ("setlifes".equalsIgnoreCase(command)){
+            if (!sender.hasPermission("pd.setlifes")){
+                sender.sendMessage(MessageUtils.translateColor("&cYou need &7pd.tpworld &cpermissions to run this command"));
+                return;
+            }
+            if (args.length < 3 || args.length > 4){
+                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&cusage: /permadeath setlifes <player> <lifes>"));
+            }else{
+                int lifes;
+                try{
+                    lifes = Integer.parseInt(args[2]);
+                } catch (NumberFormatException e){
+                    sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&clifes must be a valid Integer"));
+                    return;
+                }
+                if (!permadeath.getDb().setLifes(args[1],lifes)){
+                    sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&cuser doesn't exist"));
+                }else{
+                    sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&aset lifes of %s to %d",args[1],lifes));
+                }
+            }
         }
     }
 
@@ -117,8 +105,7 @@ public class MainCommand implements CommandExecutor {
                 "&8&m----------------------------------------\n" +
                 "&7/permadeath help &8- &7Displays this help message\n" +
                 "&7/permadeath version &8- &7Displays the plugin version\n" +
-                "&7/permadeath afkban &8- &7Bans someone for being AFK\n" +
-                "&7/permadeath unban &8- &7Unbans a permabanned player\n" +
+                "&7/permadeath setlifes &8- &7Manually sets the lifes of a player\n" +
                 "&7/permadeath setday &8- &7Manually sets the current day\n" +
                 "&7/permadeath reload &8- &7Reloads the plugin's config.yml\n" +
                 "&8&m----------------------------------------";

@@ -58,8 +58,8 @@ public class PlayerListener implements Listener{
     public void onJoin(PlayerJoinEvent e){
         Player player = e.getPlayer();
         e.setJoinMessage(MessageUtils.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("player_joined"),
-                player.getName()));
-        permadeath.getDb().addUser(player.getName());
+                player.getName(),permadeath.getDb().getLifes(player.getName())));
+        permadeath.getDb().addUser(player.getName(),permadeath.getMainConfigManager().getStartingLives());
         player.setResourcePack("https://fun.guimx.me/r/permadeath.zip?compress=false",
               HexFormat.of().parseHex("abfaa1a8b810e81f85aa542166aaa8950f19c7c7"),MessageUtils.translateColor(permadeath.getMainConfigManager().getMessages().get("texture_pack")),false);
         player.sendMessage(MessageUtils.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("current_day"),
@@ -101,7 +101,6 @@ public class PlayerListener implements Listener{
 
         Bukkit.getScheduler().runTaskLater(permadeath, () -> {
             player.spigot().respawn();
-            player.setGameMode(GameMode.SPECTATOR);
 
             Bukkit.broadcastMessage(MessageUtils.translateColor(permadeath.prefix+
                             permadeath.getMainConfigManager().getMessages().get("death_train_enabled"),
@@ -115,9 +114,17 @@ public class PlayerListener implements Listener{
             });
 
             String reason = MessageUtils.translateColor(permadeath.getMainConfigManager().getMessages().get("permadeath_kick_reason"));
-            permadeath.getDb().banOrUnbanPlayer(player.getName(),true);
-            Bukkit.getScheduler().runTaskLater(permadeath, () -> player.kickPlayer(reason), 150L);
-            }, 1L);
+            int newLifes = permadeath.getDb().getLifes(player.getName());
+            permadeath.getDb().setLifes(player.getName(),newLifes-1);
+
+            if(newLifes-1 <= 0) {
+                player.setGameMode(GameMode.SPECTATOR);
+                Bukkit.getScheduler().runTaskLater(permadeath, () -> player.kickPlayer(reason), 150L);
+            }else{
+                player.sendMessage(MessageUtils.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getRemainingLifes(),
+                        newLifes-1));
+            }
+        }, 1L);
 
         World world = Objects.requireNonNull(Bukkit.getWorld("world"));
         if (deathTrainSecondsRemaining[0] > 0) {
