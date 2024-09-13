@@ -26,6 +26,7 @@ import org.bukkit.event.inventory.SmithItemEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent.Status;
 import org.bukkit.inventory.SmithingInventory;
+import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Vector;
 import pd.guimx.Permadeath;
 import pd.guimx.utils.MessageUtils;
@@ -84,7 +85,7 @@ public class PlayerListener implements Listener{
 
         String coordinates = String.format("x: %d, y: %d, z: %d",
                 location.getBlockX(),location.getBlockY(),location.getBlockZ());
-        e.setDeathMessage(e.getDeathMessage()+" - "+coordinates);
+        e.setDeathMessage(e.getDeathMessage()+" | "+coordinates);
 
         Block block = location.getBlock();
         block.setType(Material.NETHER_BRICK_FENCE);
@@ -296,7 +297,9 @@ public class PlayerListener implements Listener{
         Player player = e.getPlayer();
         e.setCancelled(true);
         PlainTextComponentSerializer serializer = PlainTextComponentSerializer.plainText();
-        Bukkit.broadcastMessage(MessageUtils.translateColor("%s: %s",player.getName(),serializer.serialize(e.originalMessage())));
+        Team team = player.getScoreboard().getEntityTeam(player);
+        String teamPrefix = team != null ? team.getDisplayName() : "";
+        player.sendMessage(MessageUtils.translateColor("%s&r%s: %s",teamPrefix,player.getName(),serializer.serialize(e.originalMessage())));
     }
 
 }
