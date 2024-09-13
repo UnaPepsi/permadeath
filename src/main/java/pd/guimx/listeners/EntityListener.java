@@ -313,7 +313,9 @@ public class EntityListener implements Listener {
     @EventHandler
     public void onProjectile(ProjectileHitEvent e){
         int day = permadeath.getMainConfigManager().getDay();
-        Entity shooter = (Entity) e.getEntity().getShooter();
+        if (!(e.getEntity().getShooter() instanceof Entity shooter)){
+            return;
+        }
         if (shooter instanceof Ghast){
             if (day > 20) {
                 World world;
