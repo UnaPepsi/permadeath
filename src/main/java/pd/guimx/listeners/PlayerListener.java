@@ -1,7 +1,6 @@
 package pd.guimx.listeners;
 
 import io.papermc.paper.event.player.AsyncChatEvent;
-import io.papermc.paper.event.player.PlayerArmSwingEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.md_5.bungee.api.ChatMessageType;
@@ -299,7 +298,7 @@ public class PlayerListener implements Listener{
         PlainTextComponentSerializer serializer = PlainTextComponentSerializer.plainText();
         Team team = player.getScoreboard().getEntityTeam(player);
         String teamPrefix = team != null ? team.getDisplayName() : "";
-        player.sendMessage(MessageUtils.translateColor("%s&r%s: %s",teamPrefix,player.getName(),serializer.serialize(e.originalMessage())));
+        Bukkit.broadcastMessage(MessageUtils.translateColor("%s&r%s: %s",teamPrefix,player.getName(),serializer.serialize(e.originalMessage())));
     }
 
 }
