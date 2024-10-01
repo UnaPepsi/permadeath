@@ -62,7 +62,7 @@ public class EntityListener implements Listener {
 
     }
     @EventHandler
-    public void onSpawn(EntitySpawnEvent e){
+    public void onSpawn(CreatureSpawnEvent e){
         int day = permadeath.getMainConfigManager().getDay();
         Entity entity = e.getEntity();
         if (entity instanceof Spider spider){
@@ -78,7 +78,7 @@ public class EntityListener implements Listener {
                     effects.add(spiderEffects.get(random.nextInt(spiderEffects.size())));
                 }
                 spider.addPotionEffects(effects);
-                if (day > 19){
+                if (day > 19 && (e.getSpawnReason() != CreatureSpawnEvent.SpawnReason.SPAWNER && e.getSpawnReason() != CreatureSpawnEvent.SpawnReason.TRIAL_SPAWNER)){
                     LivingEntity skelly;
                     switch (random.nextInt(1,5)){
                         case 1:
@@ -351,20 +351,21 @@ public class EntityListener implements Listener {
             return;
         }
         if (e.getEntity() instanceof Mob mob) {
-            Player player = mob.getWorld().getPlayers().stream().findFirst().orElse(null);
-            if (player == null){
+            List<Player> nearbyPlayers = mob.getLocation().getNearbyPlayers(25,pred -> {
+                EntityEquipment armor = pred.getEquipment();
+                return ((pred.getGameMode() == GameMode.SURVIVAL || pred.getGameMode() == GameMode.ADVENTURE) &&
+                        (!pred.hasPotionEffect(PotionEffectType.INVISIBILITY) ||
+                         (armor.getHelmet() != null || armor.getChestplate() != null ||
+                                armor.getLeggings() != null || armor.getBoots() != null)));
+            }).stream().toList();
+            if (nearbyPlayers.isEmpty()){
                 return;
             }
-            double distance = player.getLocation().toVector().distance(mob.getLocation().toVector());
-            if (distance < 1 && !(mob instanceof Monster)) {
+            Player player = nearbyPlayers.getFirst();
+            if (mob.getBoundingBox().overlaps(player.getBoundingBox()) && !(mob instanceof Monster)) {
                 player.damage(2,mob);
             }
-            EntityEquipment armor = player.getEquipment();
-            if (player.getGameMode() != GameMode.SURVIVAL || player.hasPotionEffect(PotionEffectType.INVISIBILITY) &&
-                    (armor.getHelmet() == null && armor.getChestplate() == null &&
-                            armor.getLeggings() == null && armor.getBoots() == null)) {
-                return;
-            }
+
             if (mob instanceof Monster){
                 if (mob instanceof PigZombie pigZombie){
                     pigZombie.setTarget(player);
@@ -380,9 +381,11 @@ public class EntityListener implements Listener {
                 golem.setTarget(player);
                 golem.setAggressive(true);
             }
+            mob.getPathfinder().moveTo(player);
+            /*
             if (distance < 25) {
                 mob.getPathfinder().moveTo(player);
-            }/*else{
+            }else{
                 mob.getPathfinder().stopPathfinding();
             }*/
         }

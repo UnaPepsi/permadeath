@@ -55,7 +55,7 @@ public class Permadeath extends JavaPlugin {
     public void worldRules(){
         Bukkit.getWorlds().forEach(w -> {
             w.setDifficulty(Difficulty.HARD);
-            w.setHardcore(true);
+            w.setHardcore(false);
             if (mainConfigManager.getDay() > 10){
                 w.setGameRule(GameRule.PLAYERS_SLEEPING_PERCENTAGE,200); //"vanilla" sleeping is disabled
             }
