@@ -253,7 +253,7 @@ public class EntityListener implements Listener {
             }
         }
 
-        if (day > 20 && entity instanceof Enemy enemy && permadeath.getPlayerListener().isDeathTrain){
+        if (day > 20 && entity instanceof Enemy enemy && permadeath.getPlayerListener().isDeathTrain()){
             enemy.addPotionEffects(day21Potions);
         }
 
@@ -290,9 +290,6 @@ public class EntityListener implements Listener {
                 }
             }else if (entity instanceof Ghast){
                 e.getDrops().clear();
-                if (day > 20 && day < 30){
-                    e.getDrops().add(new ItemStack(Material.NETHERITE_HELMET));
-                }e.getDrops().clear();
                 if (day > 20 && day < 30){
                     e.getDrops().add(new ItemStack(Material.NETHERITE_HELMET));
                 }
@@ -349,6 +346,11 @@ public class EntityListener implements Listener {
         }
         if (e.getEntity() instanceof Enderman){
             return;
+        }
+        if (e.getEntity() instanceof Creeper creeper){
+            if ("world_the_end".equals(creeper.getWorld().getName())) {
+                creeper.getWorld().spawnParticle(Particle.PORTAL, creeper.getEyeLocation(), 10);
+            }
         }
         if (e.getEntity() instanceof Mob mob) {
             List<Player> nearbyPlayers = mob.getLocation().getNearbyPlayers(25,pred -> {
@@ -429,7 +431,7 @@ public class EntityListener implements Listener {
             return;
         }
         if (day > 29){
-            if (random.nextDouble() < 0.5 || e.getDamageSource().getDamageType() == DamageType.ARROW) {
+            if (random.nextDouble() < 0.33 || e.getDamageSource().getDamageType() == DamageType.ARROW) {
                 Location loc = creeper.getLocation();
                 Location teleportLocation;
                 Entity attacker = e.getDamageSource().getCausingEntity();
@@ -454,6 +456,8 @@ public class EntityListener implements Listener {
                 if (!teleportEvent.isCancelled()) {
                     //Bukkit.broadcastMessage(teleportLocation.getBlock().toString()+teleportLocation.getBlockY());
                     e.setCancelled(true);
+                    creeper.getWorld().playSound(creeper.getLocation(),Sound.ENTITY_ENDERMAN_TELEPORT,5,1);
+                    creeper.getWorld().spawnParticle(Particle.PORTAL,creeper.getEyeLocation(),100);
                     creeper.teleport(teleportEvent.getTo());
                 }
             }
@@ -538,6 +542,9 @@ public class EntityListener implements Listener {
         if (entity instanceof TNTPrimed tntPrimed && tntPrimed.getSource() instanceof EnderDragon){
             List<Block> blockList = e.blockList();
             blockList.forEach(block -> {
+                if (block.getType() == Material.BEDROCK){
+                    return;
+                }
                 Location location;
                 location = block.getLocation();
                 block.getWorld().spawn(location, EntityType.FALLING_BLOCK.getEntityClass(),spawnedEntity -> {

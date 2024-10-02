@@ -41,12 +41,15 @@ import static pd.guimx.listeners.EntityListener.random;
 public class PlayerListener implements Listener{
 
     Permadeath permadeath;
-    public boolean isDeathTrain = false;
+    private boolean isDeathTrain = false;
     private int[] deathTrainSecondsRemaining = {-1};
     public PlayerListener(Permadeath permadeath){
         this.permadeath = permadeath;
     }
 
+    public boolean isDeathTrain(){
+        return isDeathTrain;
+    }
     @EventHandler
     public void onPreJoin(AsyncPlayerPreLoginEvent e){
         if (permadeath.getDb().userBanned(e.getName())){

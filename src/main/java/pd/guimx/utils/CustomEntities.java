@@ -124,7 +124,7 @@ public class CustomEntities {
         skelly.getEquipment().setChestplate(new ItemStack(Material.GOLDEN_CHESTPLATE));
         skelly.getEquipment().setLeggings(new ItemStack(Material.GOLDEN_LEGGINGS));
         skelly.getEquipment().setBoots(new ItemStack(Material.GOLDEN_BOOTS));
-        ItemStack crossbow = new ItemStack(Material.BOW);
+        ItemStack crossbow = new ItemStack(Material.CROSSBOW);
         crossbow.addUnsafeEnchantment(Enchantment.SHARPNESS,25);
         skelly.getEquipment().setItemInMainHand(crossbow);
         ItemStack arrow = new ItemStack(Material.TIPPED_ARROW);
@@ -133,6 +133,7 @@ public class CustomEntities {
         potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.LEVITATION,20*5,1),true); //thanks tokaua for the idea lol
         arrow.setItemMeta(potionMeta);
         skelly.getEquipment().setItemInOffHand(arrow);
+        skelly.getEquipment().setItemInMainHandDropChance(0);
         return skelly;
     }
 
