@@ -124,7 +124,7 @@ public class PlayerListener implements Listener{
                 player.setGameMode(GameMode.SPECTATOR);
                 Bukkit.getScheduler().runTaskLater(permadeath, () -> player.kickPlayer(reason), 150L);
             }else{
-                player.sendMessage(MessageUtils.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getRemainingLifes(),
+                player.sendMessage(MessageUtils.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("remaining_lifes"),
                         newLifes-1));
             }
         }, 1L);
@@ -160,7 +160,7 @@ public class PlayerListener implements Listener{
         }
         Bukkit.getScheduler().runTaskAsynchronously(permadeath, () -> {
             for (String webhook : permadeath.getMainConfigManager().getDiscordWebhooks()) {
-                Webhook.sendMessage(webhook, String.format(permadeath.getMainConfigManager().getDiscordWebhookDied(),player.getName()),
+                Webhook.sendMessage(webhook, String.format(permadeath.getMainConfigManager().getMessages().get("discord_webhook_died"),player.getName()),
                         e.getDeathMessage(), player.getName(),
                         permadeath.getMainConfigManager().getDay(), true);
             }
@@ -242,7 +242,7 @@ public class PlayerListener implements Listener{
                 Bukkit.broadcastMessage(MessageUtils.translateColor(permadeath.prefix+totemWorked));
                 Bukkit.getScheduler().runTaskAsynchronously(permadeath,() -> {
                     for (String webhook : permadeath.getMainConfigManager().getDiscordWebhooks()) {
-                        Webhook.sendMessage(webhook, String.format(permadeath.getMainConfigManager().getDiscordWebhookTotem(),player.getName()),
+                        Webhook.sendMessage(webhook, String.format(permadeath.getMainConfigManager().getMessages().get("discord_webhook_totem"),player.getName()),
                                 totemWorked.replaceAll("&.",""), player.getName(),
                                 permadeath.getMainConfigManager().getDay(), false);
                     }

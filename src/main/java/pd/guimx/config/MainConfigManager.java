@@ -15,10 +15,7 @@ public class MainConfigManager {
     private int deathTrainSeconds;
     private HashMap<String,String> messages = new HashMap<>();
     private List<String> discordWebhooks;
-    private String discordWebhookDied;
-    private String discordWebhookTotem;
     private int startingLives;
-    private String remainingLifes;
 
     public MainConfigManager(Permadeath permadeath){
         this.permadeath = permadeath;
@@ -50,10 +47,11 @@ public class MainConfigManager {
         messages.put("totem_worked",config.getString("messages.totem_worked"));
         messages.put("bed_anchor_disabled_end",config.getString("messages.bed_anchor_disabled_end"));
         discordWebhooks = config.getStringList("config.discord_webhooks");
-        discordWebhookDied = config.getString("messages.discord_webhook_died");
-        discordWebhookTotem = config.getString("messages.discord_webhook_totem");
+        messages.put("discord_webhook_died",(config.getString("messages.discord_webhook_died")));
+        messages.put("discord_webhook_totem",(config.getString("messages.discord_webhook_totem")));
         startingLives = config.getInt("config.starting_lives");
-        remainingLifes = config.getString("messages.remaining_lifes");
+        messages.put("remaining_lifes",(config.getString("messages.remaining_lifes")));
+        messages.put("motd",config.getString(getDay() > 29 ? "messages.motd_day_30" : "messages.motd_before_day_30"));
     }
 
     public void reloadConfig(){
@@ -83,16 +81,7 @@ public class MainConfigManager {
     public List<String> getDiscordWebhooks(){
         return discordWebhooks;
     }
-    public String getDiscordWebhookDied(){
-        return discordWebhookDied;
-    }
-    public String getDiscordWebhookTotem(){
-        return discordWebhookTotem;
-    }
     public int getStartingLives(){
         return startingLives;
-    }
-    public String getRemainingLifes(){
-        return remainingLifes;
     }
 }

@@ -33,6 +33,7 @@ public class Permadeath extends JavaPlugin {
         registerEvents();
         startCounting();
         Bukkit.getConsoleSender().sendMessage(MessageUtils.translateColor(prefix+"&ahas been enabled!"));
+        Bukkit.setMotd(MessageUtils.translateColor(mainConfigManager.getMessages().get("motd")));
     }
 
     public void onDisable(){

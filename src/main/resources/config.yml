@@ -25,3 +25,5 @@ messages:
   bed_anchor_disabled_end: "&cThis is disabled in The End"
   discord_webhook_died: "%s HAS DIED!"
   discord_webhook_totem: "%s popped a Totem!"
+  motd_before_day_30: "You won't last longer than 30 seconds... wait"
+  motd_day_30: "                 &c&l&kii &4&lWELCOME TO HELL &c&l&kii"
