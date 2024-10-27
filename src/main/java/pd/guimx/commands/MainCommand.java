@@ -1,13 +1,22 @@
 package pd.guimx.commands;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
+import org.bukkit.inventory.ItemStack;
 import pd.guimx.Permadeath;
-import pd.guimx.utils.MessageUtils;
+import pd.guimx.utils.Miscellaneous;
+
+import java.util.ArrayList;
 
 
 public class MainCommand implements CommandExecutor {
@@ -20,24 +29,24 @@ public class MainCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 0 || "help".equalsIgnoreCase(args[0])) {
-            sender.sendMessage(MessageUtils.translateColor(helpCommand()));
+            sender.sendMessage(Miscellaneous.translateColor(helpCommand()));
             return true;
         } else if ("version".equalsIgnoreCase(args[0])) {
-            sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "currently in version " + permadeath.version));
+            sender.sendMessage(Miscellaneous.translateColor(permadeath.prefix + "currently in version " + permadeath.version));
         } else if ("setday".equalsIgnoreCase(args[0]) || "tpworld".equalsIgnoreCase(args[0]) ||
-                "setlifes".equalsIgnoreCase(args[0])) {
+                "setlifes".equalsIgnoreCase(args[0]) || "test".equalsIgnoreCase(args[0])) {
             subCommandHandler(sender, args[0], args);
         } else if ("reload".equalsIgnoreCase(args[0])) {
             if (!sender.hasPermission("pd.reload")) {
-                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&cYou need &7pd.reload &cpermissions to run this command"));
+                sender.sendMessage(Miscellaneous.translateColor(permadeath.prefix + "&cYou need &7pd.reload &cpermissions to run this command"));
                 return true;
             }
             permadeath.getMainConfigManager().reloadConfig();
-            sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&aReloaded config!"));
-        }else if ("hour".equalsIgnoreCase(args[0])){
-            sender.sendMessage("hour "+permadeath.getMainConfigManager().getHour());
+            sender.sendMessage(Miscellaneous.translateColor(permadeath.prefix + "&aReloaded config!"));
+        }else if ("hour".equalsIgnoreCase(args[0])) {
+            sender.sendMessage("hour " + permadeath.getMainConfigManager().getHour());
         }else{
-            sender.sendMessage(MessageUtils.translateColor(helpCommand()));
+            sender.sendMessage(Miscellaneous.translateColor(helpCommand()));
         }
         return true;
     }
@@ -45,11 +54,11 @@ public class MainCommand implements CommandExecutor {
     private void subCommandHandler(CommandSender sender, String command, String[] args){
         if ("setday".equalsIgnoreCase(command)) {
             if (!sender.hasPermission("pd.set")){
-                sender.sendMessage(MessageUtils.translateColor("&cYou need &7pd.set &cpermissions to run this command"));
+                sender.sendMessage(Miscellaneous.translateColor("&cYou need &7pd.set &cpermissions to run this command"));
                 return;
             }
             if (args.length < 2 || args.length > 3){
-                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&cusage: /permadeath setday <day>"));
+                sender.sendMessage(Miscellaneous.translateColor(permadeath.prefix + "&cusage: /permadeath setday <day>"));
             }else {
                 int day;
                 try {
@@ -59,16 +68,16 @@ public class MainCommand implements CommandExecutor {
                     }
                     permadeath.getMainConfigManager().setHour(day*24);
                 } catch (NumberFormatException e) {
-                    sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&cday must be a valid Integer"));
+                    sender.sendMessage(Miscellaneous.translateColor(permadeath.prefix + "&cday must be a valid Integer"));
                     return;
                 }
-                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&aNow on day: &c" + permadeath.getMainConfigManager().getDay()));
-                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"Please remember that if you wish to change how mobs spawn you must change so " +
+                sender.sendMessage(Miscellaneous.translateColor(permadeath.prefix + "&aNow on day: &c" + permadeath.getMainConfigManager().getDay()));
+                sender.sendMessage(Miscellaneous.translateColor(permadeath.prefix+"Please remember that if you wish to change how mobs spawn you must change so " +
                         "manually and restart the server"));
             }
         }else if ("tpworld".equalsIgnoreCase(command)){
             if (!sender.hasPermission("pd.tpworld")){
-                sender.sendMessage(MessageUtils.translateColor("&cYou need &7pd.tpworld &cpermissions to run this command"));
+                sender.sendMessage(Miscellaneous.translateColor("&cYou need &7pd.tpworld &cpermissions to run this command"));
                 return;
             }
             if (sender instanceof Player player){
@@ -77,24 +86,106 @@ public class MainCommand implements CommandExecutor {
             }
         }else if ("setlifes".equalsIgnoreCase(command)){
             if (!sender.hasPermission("pd.setlifes")){
-                sender.sendMessage(MessageUtils.translateColor("&cYou need &7pd.tpworld &cpermissions to run this command"));
+                sender.sendMessage(Miscellaneous.translateColor("&cYou need &7pd.tpworld &cpermissions to run this command"));
                 return;
             }
             if (args.length < 3 || args.length > 4){
-                sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&cusage: /permadeath setlifes <player> <lifes>"));
+                sender.sendMessage(Miscellaneous.translateColor(permadeath.prefix + "&cusage: /permadeath setlifes <player> <lifes>"));
             }else{
                 int lifes;
                 try{
                     lifes = Integer.parseInt(args[2]);
                 } catch (NumberFormatException e){
-                    sender.sendMessage(MessageUtils.translateColor(permadeath.prefix + "&clifes must be a valid Integer"));
+                    sender.sendMessage(Miscellaneous.translateColor(permadeath.prefix + "&clifes must be a valid Integer"));
                     return;
                 }
                 if (!permadeath.getDb().setLifes(args[1],lifes)){
-                    sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&cuser doesn't exist"));
+                    sender.sendMessage(Miscellaneous.translateColor(permadeath.prefix+"&cuser doesn't exist"));
                 }else{
-                    sender.sendMessage(MessageUtils.translateColor(permadeath.prefix+"&aset lifes of %s to %d",args[1],lifes));
+                    sender.sendMessage(Miscellaneous.translateColor(permadeath.prefix+"&aset lifes of %s to %d",args[1],lifes));
                 }
+            }
+        }else if ("test".equalsIgnoreCase(command)){
+            if (!sender.hasPermission("pd.test")){
+                sender.sendMessage(Miscellaneous.translateColor("&cYou need &7pd.test &cpermissions to run this command"));
+                return;
+            }
+            if (!(sender instanceof Player player)){
+                sender.sendMessage(Miscellaneous.translateColor("&cPlayer only command"));
+                return;
+            }
+            PacketContainer packetContainer;
+            switch (args[1]){
+                case "death":
+                    packetContainer = permadeath.getProtocolManager().createPacket(PacketType.Play.Server.PLAYER_COMBAT_KILL);
+                    packetContainer.getIntegers().write(0,player.getEntityId());
+                    packetContainer.getChatComponents().write(0, WrappedChatComponent.fromText("sucks"));
+                    permadeath.getProtocolManager().sendServerPacket(player,packetContainer);
+                    break;
+                case "enderman":
+                    Enderman enderman = (Enderman) player.getWorld().spawn(player.getLocation(), EntityType.ENDERMAN.getEntityClass());
+                    packetContainer = permadeath.getProtocolManager().createPacket(PacketType.Play.Server.CAMERA);
+                    packetContainer.getIntegers().write(0,enderman.getEntityId());
+                    permadeath.getProtocolManager().sendServerPacket(player,packetContainer);
+                    enderman.remove();
+                    Location location = player.getEyeLocation();
+                    if ("kill".equalsIgnoreCase(args[2])) {
+                        player.setGameMode(GameMode.SURVIVAL);
+                        //ItemStack[] itemStacks = player.getInventory().getContents().clone(); It's better to just have keepInventory in the PlayerDeathEvent
+                        //player.getInventory().clear();
+                        //player.setHealth(0);
+                        player.damage(Integer.MAX_VALUE, player); //a player can't just hit themselves so with this I'm able to not trigger what would normally happen in the PlayerDeathEvent
+                        player.spigot().respawn();
+                        //player.getInventory().setContents(itemStacks);
+                        player.teleport(location);
+                        if (player.getPreviousGameMode() == null) {
+                            player.setGameMode(GameMode.SURVIVAL);
+                        }
+                        player.setGameMode(player.getPreviousGameMode());
+                    }else if ("world".equalsIgnoreCase(args[2])){
+                        player.teleport(new Location(Bukkit.getWorld("afevoid"),0,100,0));
+                        player.teleport(location);
+                    }
+                    break;
+                case "zawarudo": //xd
+                    Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),"tick freeze");
+                    Bukkit.getOnlinePlayers().forEach(p -> {
+                        double speed = p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).getValue();
+                        double jumpSrength = p.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).getValue();
+                        double entityReach = p.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE).getValue();
+                        double blockReach = p.getAttribute(Attribute.PLAYER_BLOCK_INTERACTION_RANGE).getValue();
+                        p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0);
+                        p.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).setBaseValue(0);
+                        p.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE).setBaseValue(0);
+                        p.getAttribute(Attribute.PLAYER_BLOCK_INTERACTION_RANGE).setBaseValue(0);
+                        Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                            p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(speed);
+                            p.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).setBaseValue(jumpSrength);
+                            p.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE).setBaseValue(entityReach);
+                            p.getAttribute(Attribute.PLAYER_BLOCK_INTERACTION_RANGE).setBaseValue(blockReach);
+                        },Long.parseLong(args[2])*20);
+                    });
+                    Bukkit.getScheduler().runTaskLater(permadeath, () -> Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),"tick unfreeze"),
+                            Long.parseLong(args[2])*20);
+                    break;
+                case "rotate":
+                    //Miscellaneous.rotateBlocksInEntity(permadeath, player, BlockType.DIAMOND_BLOCK,Integer.parseInt(args[2]),Long.parseLong(args[4]),Double.parseDouble(args[3]));
+                    ArrayList<Entity> entities = new ArrayList<>();
+                    for (int i = 0; i < 50; i++){
+                        ArmorStand stand = (ArmorStand) player.getWorld().spawn(player.getLocation(),EntityType.ARMOR_STAND.getEntityClass(), a -> {
+                            ArmorStand armorStand = (ArmorStand) a;
+                            //armorStand.setMarker(true); //this makes armor stands not be able to have velocity
+                            armorStand.setNoPhysics(true);
+                            armorStand.setInvisible(true);
+                            armorStand.setItemInHand(new ItemStack(Material.DIAMOND_BLOCK));
+                        });
+                        entities.add(stand);
+                    }
+                    Miscellaneous.rotateEntitiesInLocation(permadeath,entities,player.getLocation(),Double.parseDouble(args[2]),10*20);
+                    break;
+                case "superrotate":
+                    Miscellaneous.rotateArmorStandsInLocation3d(permadeath,player.getLocation(),Integer.parseInt(args[2]),Integer.parseInt(args[3]));
+                    break;
             }
         }
     }

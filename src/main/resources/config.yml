@@ -27,3 +27,4 @@ messages:
   discord_webhook_totem: "%s popped a Totem!"
   motd_before_day_30: "You won't last longer than 30 seconds... wait"
   motd_day_30: "                 &c&l&kii &4&lWELCOME TO HELL &c&l&kii"
+  dragon_heal: "&cDemon is healing itself!"

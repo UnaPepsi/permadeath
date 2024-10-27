@@ -1,9 +1,10 @@
 package pd.guimx.config;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import pd.guimx.Permadeath;
+import pd.guimx.utils.Miscellaneous;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -52,6 +53,8 @@ public class MainConfigManager {
         startingLives = config.getInt("config.starting_lives");
         messages.put("remaining_lifes",(config.getString("messages.remaining_lifes")));
         messages.put("motd",config.getString(getDay() > 29 ? "messages.motd_day_30" : "messages.motd_before_day_30"));
+        messages.put("dragon_heal",config.getString("messages.dragon_heal"));
+        Bukkit.setMotd(Miscellaneous.translateColor(messages.get("motd")));
     }
 
     public void reloadConfig(){

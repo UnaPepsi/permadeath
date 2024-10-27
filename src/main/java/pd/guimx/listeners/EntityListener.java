@@ -1,12 +1,11 @@
 package pd.guimx.listeners;
 
 import io.papermc.paper.event.entity.EntityMoveEvent;
+import io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
-import org.bukkit.block.ShulkerBox;
-import org.bukkit.block.data.type.TNT;
 import org.bukkit.boss.BarColor;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
@@ -18,12 +17,12 @@ import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.util.Vector;
 import pd.guimx.Permadeath;
 import pd.guimx.utils.CustomEntities;
-import pd.guimx.utils.MessageUtils;
+import pd.guimx.utils.Miscellaneous;
 
-import java.awt.geom.Area;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -404,8 +403,8 @@ public class EntityListener implements Listener {
     @EventHandler
     public void onDamage(EntityDamageEvent e){
         Entity entity = e.getEntity();
-        if (entity instanceof EnderCrystal || "world_the_end".equals(entity.getWorld())){
-            enderCrystalLocations.add(entity.getLocation());
+        if (entity instanceof EnderCrystal crystal && "world_the_end".equals(crystal.getWorld().getName()) && crystal.getWorld().getEnderDragonBattle() != null){
+            enderCrystalLocations.add(crystal.getLocation());
             Bukkit.getScheduler().runTaskLater(permadeath, () -> {
                 entity.getWorld().spawn(entity.getLocation(), EntityType.GHAST.getEntityClass());
             },1);
@@ -417,9 +416,11 @@ public class EntityListener implements Listener {
             }
             if (dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()/dragon.getHealth() >= 2){
                 dragon.getBossBar().setColor(BarColor.RED);
-                dragon.customName(Component.text(MessageUtils.translateColor("&c&lENRAGED PERMADEATH DEMON")));
+                dragon.customName(Component.text(Miscellaneous.translateColor("&c&lENRAGED PERMADEATH DEMON")));
                 this.isEnderDragonEnraged = true;
             }else{
+                dragon.getBossBar().setColor(BarColor.BLUE);
+                dragon.customName(Component.text(Miscellaneous.translateColor("&6&lPERMADEATH DEMON")));
                 this.isEnderDragonEnraged = false;
             }
         }
@@ -467,31 +468,84 @@ public class EntityListener implements Listener {
     @EventHandler
     public void onDragonPhaseChange(EnderDragonChangePhaseEvent e) {
         EnderDragon dragon = e.getEntity();
+        if (dragon.getDragonBattle() == null && dragon.getDragonBattle().getEndPortalLocation() == null){
+            return;
+        }
         EnderDragon.Phase phase = e.getCurrentPhase();
         if (phase == EnderDragon.Phase.LAND_ON_PORTAL) {
             //e.getEntity().getDragonBattle().resetCrystals();
-            if (!enderCrystalLocations.isEmpty() && random.nextInt(0, 100) < 10) {
+            if (!enderCrystalLocations.isEmpty() && random.nextFloat() <= 0.1) {
                 for (Location location : enderCrystalLocations) {
                     dragon.getWorld().spawn(location, EntityType.END_CRYSTAL.getEntityClass());
                 }
                 enderCrystalLocations.clear();
+            }else if (random.nextFloat() <= 0.2 && dragon.getHealth() < dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()*0.7){
+                BukkitScheduler scheduler = Bukkit.getScheduler();
+                ArrayList<Entity> entities = new ArrayList<>();
+                for (int i = 0; i < 50; i++){
+                        ArmorStand stand = (ArmorStand) dragon.getWorld().spawn(dragon.getDragonBattle().getEndPortalLocation().add(0,5,0),EntityType.ARMOR_STAND.getEntityClass(), a -> {
+                            ArmorStand armorStand = (ArmorStand) a;
+                            //armorStand.setMarker(true); //this makes armor stands not be able to have velocity
+                            armorStand.setNoPhysics(true);
+                            armorStand.setInvisible(true);
+                            armorStand.setCollidable(false);
+                            armorStand.setItemInHand(new ItemStack(Material.DIAMOND_BLOCK));
+                        });
+                        entities.add(stand);
+                    scheduler.runTaskLater(permadeath, () -> {
+                        if (!dragon.isDead() && dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue() > dragon.getHealth()+1){
+                            dragon.setHealth(dragon.getHealth()+1);
+                            if (dragon.getBossBar() == null){
+                                return;
+                            }
+                            if (dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()/dragon.getHealth() >= 2){
+                                dragon.getBossBar().setColor(BarColor.RED);
+                                dragon.customName(Component.text(Miscellaneous.translateColor("&c&lENRAGED PERMADEATH DEMON")));
+                                this.isEnderDragonEnraged = true;
+                            }else{
+                                dragon.getBossBar().setColor(BarColor.BLUE);
+                                dragon.customName(Component.text(Miscellaneous.translateColor("&6&lPERMADEATH DEMON")));
+                                this.isEnderDragonEnraged = false;
+                            }
+                        }
+                    },i/4*20);
+                }
+                Bukkit.broadcastMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("dragon_heal")));
+                Miscellaneous.rotateEntitiesInLocation(permadeath,entities,dragon.getDragonBattle().getEndPortalLocation().add(0,5,0),30,4*20);
             }else{
                 dragon.getWorld().spawn(dragon.getLocation(), EntityType.ENDERMITE.getEntityClass());
             }
         }else if (phase == EnderDragon.Phase.CIRCLING) {
             float randFloat = random.nextFloat();
             if (randFloat < 0.20) {
-                dragon.getWorld().getPlayers().forEach(p -> {
-                    p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION,20*5,1));
-                    Bukkit.getScheduler().runTaskLater(permadeath, () -> {
-                        p.getWorld().spawn(p.getLocation(),EntityType.AREA_EFFECT_CLOUD.getEntityClass(), spawnedCloud -> {
-                           AreaEffectCloud areaEffectCloud = (AreaEffectCloud) spawnedCloud;
-                           areaEffectCloud.setRadius(2.5f);
-                           areaEffectCloud.setParticle(Particle.DAMAGE_INDICATOR);
-                           areaEffectCloud.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE,1,2),true);
-                        });
-                    },20*5);
-                });
+                float anotherRandomFloat = random.nextFloat(); //shush
+                if (anotherRandomFloat <= 0.5) {
+                    dragon.getWorld().getPlayers().forEach(p -> {
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 5, 1));
+                        Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                            p.getWorld().spawn(p.getLocation(), EntityType.AREA_EFFECT_CLOUD.getEntityClass(), spawnedCloud -> {
+                                AreaEffectCloud areaEffectCloud = (AreaEffectCloud) spawnedCloud;
+                                areaEffectCloud.setRadius(2.5f);
+                                areaEffectCloud.setParticle(Particle.DAMAGE_INDICATOR);
+                                areaEffectCloud.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 1, 2), true);
+                            });
+                        }, 20 * 5);
+                    });
+                }else{
+                    dragon.getWorld().getPlayers().forEach(p -> {
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 20 * 5, 1));
+                        Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                            p.getWorld().spawn(p.getLocation(), EntityType.AREA_EFFECT_CLOUD.getEntityClass(), spawnedCloud -> {
+                                AreaEffectCloud areaEffectCloud = (AreaEffectCloud) spawnedCloud;
+                                areaEffectCloud.setRadius(3);
+                                areaEffectCloud.setParticle(Particle.RAID_OMEN);
+                                areaEffectCloud.addCustomEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20 * 10, 2), true);
+                                areaEffectCloud.addCustomEffect(new PotionEffect(PotionEffectType.NAUSEA, 20 * 10, 5), true);
+                                areaEffectCloud.addCustomEffect(new PotionEffect(PotionEffectType.WEAKNESS, 20 * 10, 255),true);
+                            });
+                        }, 20 * 5);
+                    });
+                }
             }else if (randFloat < 0.5) {
                 List<Location> locations = new ArrayList<>();
                 for (int i = 0; i < 6; i++) {
@@ -542,9 +596,6 @@ public class EntityListener implements Listener {
         if (entity instanceof TNTPrimed tntPrimed && tntPrimed.getSource() instanceof EnderDragon){
             List<Block> blockList = e.blockList();
             blockList.forEach(block -> {
-                if (block.getType() == Material.BEDROCK){
-                    return;
-                }
                 Location location;
                 location = block.getLocation();
                 block.getWorld().spawn(location, EntityType.FALLING_BLOCK.getEntityClass(),spawnedEntity -> {
@@ -557,4 +608,25 @@ public class EntityListener implements Listener {
         }
     }
 
+    @EventHandler
+    public void onHealthRegain(EntityRegainHealthEvent e){
+        if (e.getEntity() instanceof EnderDragon dragon && dragon.getBossBar() != null){
+            if (dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()/dragon.getHealth() >= 2){
+                dragon.getBossBar().setColor(BarColor.RED);
+                dragon.customName(Component.text(Miscellaneous.translateColor("&c&lENRAGED PERMADEATH DEMON")));
+                this.isEnderDragonEnraged = true;
+            }else{
+                dragon.getBossBar().setColor(BarColor.BLUE);
+                dragon.customName(Component.text(Miscellaneous.translateColor("&6&lPERMADEATH DEMON")));
+                this.isEnderDragonEnraged = false;
+            }
+        }
+    }
+
+    @EventHandler
+    public void onDragonPush(EntityPushedByEntityAttackEvent e){
+        if (e.getPushedBy() instanceof EnderDragon && e.getEntity() instanceof ArmorStand stand && stand.isInvisible()){
+            e.setCancelled(true);
+        }
+    }
 }

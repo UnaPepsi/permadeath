@@ -50,7 +50,7 @@ public class Webhook {
             byte[] input = json.getBytes(StandardCharsets.UTF_8);
             outputStream.write(input, 0, input.length);
 
-            conn.getResponseCode(); //why the hell do I have to use this for the request to send
+            conn.getResponseCode();
 
         }catch (Exception e){
             e.printStackTrace();

@@ -1,9 +1,10 @@
 main: pd.guimx.Permadeath
-version: 2.2.1
+version: 2.3.0
 name: Permadeath
 author: guimx
 api-version: 1.21.1
 description: meow
+depend: [ProtocolLib]
 
 commands:
   permadeath:

@@ -28,7 +28,7 @@ import org.bukkit.inventory.SmithingInventory;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Vector;
 import pd.guimx.Permadeath;
-import pd.guimx.utils.MessageUtils;
+import pd.guimx.utils.Miscellaneous;
 import pd.guimx.utils.Webhook;
 
 import java.util.HexFormat;
@@ -54,18 +54,18 @@ public class PlayerListener implements Listener{
     public void onPreJoin(AsyncPlayerPreLoginEvent e){
         if (permadeath.getDb().userBanned(e.getName())){
             e.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_OTHER);
-            e.setKickMessage(MessageUtils.translateColor(permadeath.getMainConfigManager().getMessages().get("player_banned")));
+            e.setKickMessage(Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("player_banned")));
         }
     }
     @EventHandler
     public void onJoin(PlayerJoinEvent e){
         Player player = e.getPlayer();
-        e.setJoinMessage(MessageUtils.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("player_joined"),
-                player.getName(),permadeath.getDb().getLifes(player.getName())));
         permadeath.getDb().addUser(player.getName(),permadeath.getMainConfigManager().getStartingLives());
+        e.setJoinMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("player_joined"),
+                player.getName(),permadeath.getDb().getLifes(player.getName())));
         player.setResourcePack("https://fun.guimx.me/r/permadeath.zip?compress=false",
-              HexFormat.of().parseHex("abfaa1a8b810e81f85aa542166aaa8950f19c7c7"),MessageUtils.translateColor(permadeath.getMainConfigManager().getMessages().get("texture_pack")),false);
-        player.sendMessage(MessageUtils.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("current_day"),
+              HexFormat.of().parseHex("abfaa1a8b810e81f85aa542166aaa8950f19c7c7"), Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("texture_pack")),false);
+        player.sendMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("current_day"),
                 permadeath.getMainConfigManager().getDay()));
     }
 
@@ -73,7 +73,7 @@ public class PlayerListener implements Listener{
     public void onPack(PlayerResourcePackStatusEvent e){ //yes i suck at naming i know
         Status status = e.getStatus();
         if (status == Status.DECLINED){
-            e.getPlayer().kickPlayer(MessageUtils.translateColor(permadeath.prefix+
+            e.getPlayer().kickPlayer(Miscellaneous.translateColor(permadeath.prefix+
                     permadeath.getMainConfigManager().getMessages().get("texture_pack_denied")));
         }
 
@@ -81,8 +81,15 @@ public class PlayerListener implements Listener{
     }
     @EventHandler
     public void onDeath(PlayerDeathEvent e){
-        this.isDeathTrain = true;
         Player player = e.getEntity();
+        if (e.getDamageSource().getCausingEntity() == player){
+            e.setDeathMessage("");
+            e.setKeepInventory(true);
+            e.setKeepLevel(true);
+            player.sendMessage("test");
+            return;
+        }
+        this.isDeathTrain = true;
         Location location = player.getLocation();
 
         String coordinates = String.format("x: %d, y: %d, z: %d",
@@ -105,10 +112,10 @@ public class PlayerListener implements Listener{
         Bukkit.getScheduler().runTaskLater(permadeath, () -> {
             player.spigot().respawn();
 
-            Bukkit.broadcastMessage(MessageUtils.translateColor(permadeath.prefix+
+            Bukkit.broadcastMessage(Miscellaneous.translateColor(permadeath.prefix+
                             permadeath.getMainConfigManager().getMessages().get("death_train_enabled"),
                         permadeath.getMainConfigManager().getDeathTrainSeconds()/3600));
-            String title = MessageUtils.translateColor(permadeath.getMainConfigManager().getMessages().get("permadeath_title"));
+            String title = Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("permadeath_title"));
             String subtitle = String.format(permadeath.getMainConfigManager().getMessages().get("permadeath_subtitle"),player.getName());
             Bukkit.getOnlinePlayers().forEach(p -> {
                 p.sendTitle(title,subtitle,10,100,10);
@@ -116,7 +123,7 @@ public class PlayerListener implements Listener{
                 p.playSound(p,"custom:permadeath",5,1);
             });
 
-            String reason = MessageUtils.translateColor(permadeath.getMainConfigManager().getMessages().get("permadeath_kick_reason"));
+            String reason = Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("permadeath_kick_reason"));
             int newLifes = permadeath.getDb().getLifes(player.getName());
             permadeath.getDb().setLifes(player.getName(),newLifes-1);
 
@@ -124,7 +131,7 @@ public class PlayerListener implements Listener{
                 player.setGameMode(GameMode.SPECTATOR);
                 Bukkit.getScheduler().runTaskLater(permadeath, () -> player.kickPlayer(reason), 150L);
             }else{
-                player.sendMessage(MessageUtils.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("remaining_lifes"),
+                player.sendMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("remaining_lifes"),
                         newLifes-1));
             }
         }, 1L);
@@ -150,7 +157,7 @@ public class PlayerListener implements Listener{
                     world.setThunderDuration(deathTrainSecondsRemaining[0]);
                 }
                 Bukkit.getOnlinePlayers().forEach(p -> {
-                    p.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(MessageUtils.translateColor(
+                    p.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(Miscellaneous.translateColor(
                             permadeath.getMainConfigManager().getMessages().get("death_train"),
                             deathTrainSecondsRemaining[0] / 3600, (deathTrainSecondsRemaining[0] % 3600) / 60, deathTrainSecondsRemaining[0] % 60)
                     ));
@@ -171,13 +178,13 @@ public class PlayerListener implements Listener{
     public void onSleep(PlayerBedEnterEvent e){
         if (permadeath.getMainConfigManager().getDay() > 19){
             e.setCancelled(true);
-            e.getPlayer().sendMessage(MessageUtils.translateColor(permadeath.prefix+
+            e.getPlayer().sendMessage(Miscellaneous.translateColor(permadeath.prefix+
                     permadeath.getMainConfigManager().getMessages().get("sleeping_disabled")));
             return;
         }
         if (isDeathTrain){
             e.setCancelled(true);
-            e.getPlayer().sendMessage(MessageUtils.translateColor(permadeath.prefix+
+            e.getPlayer().sendMessage(Miscellaneous.translateColor(permadeath.prefix+
                     permadeath.getMainConfigManager().getMessages().get("sleeping_disabled_deathtrain")));
             return;
         }
@@ -216,7 +223,7 @@ public class PlayerListener implements Listener{
             inventory.contains(Material.DIAMOND_CHESTPLATE) ||
             inventory.contains(Material.DIAMOND_LEGGINGS) ||
             inventory.contains(Material.DIAMOND_BOOTS))){
-            e.getWhoClicked().sendMessage(MessageUtils.translateColor(permadeath.prefix+
+            e.getWhoClicked().sendMessage(Miscellaneous.translateColor(permadeath.prefix+
                     permadeath.getMainConfigManager().getMessages().get("upgrade_netherite_failed")));
             e.setCancelled(true);
         }
@@ -233,13 +240,13 @@ public class PlayerListener implements Listener{
             int probability = day > 33 ? 3 : 1;
             if (randomInt < probability){
                 e.setCancelled(true);
-                Bukkit.broadcastMessage(MessageUtils.translateColor(permadeath.prefix+
+                Bukkit.broadcastMessage(Miscellaneous.translateColor(permadeath.prefix+
                                 permadeath.getMainConfigManager().getMessages().get("totem_failed"),
                         player.getName()));
             }else{
                 String totemWorked = String.format(permadeath.getMainConfigManager().getMessages().get("totem_worked"),
                         e.getEntity().getName(),randomInt+1,probability);
-                Bukkit.broadcastMessage(MessageUtils.translateColor(permadeath.prefix+totemWorked));
+                Bukkit.broadcastMessage(Miscellaneous.translateColor(permadeath.prefix+totemWorked));
                 Bukkit.getScheduler().runTaskAsynchronously(permadeath,() -> {
                     for (String webhook : permadeath.getMainConfigManager().getDiscordWebhooks()) {
                         Webhook.sendMessage(webhook, String.format(permadeath.getMainConfigManager().getMessages().get("discord_webhook_totem"),player.getName()),
@@ -256,7 +263,6 @@ public class PlayerListener implements Listener{
         Location loc = e.getTo().clone();
         loc.setY(e.getTo().getY()-0.1);
         if (loc.getBlock().getType() == Material.BEDROCK){
-            loc.add(0,60,0);
 
             //For some reason, even with a higher y vector, the velocity is the same, just that for some reason,
             //when I take damage, if I set the Vector to have a higher y the velocity applies multiple times.
@@ -270,7 +276,7 @@ public class PlayerListener implements Listener{
         BlockData blockData = e.getBlockPlaced().getBlockData();
         if ((blockData instanceof Bed || blockData instanceof RespawnAnchor)
             && "world_the_end".equalsIgnoreCase(e.getPlayer().getWorld().getName())){
-            e.getPlayer().sendMessage(MessageUtils.translateColor(permadeath.prefix+
+            e.getPlayer().sendMessage(Miscellaneous.translateColor(permadeath.prefix+
                     permadeath.getMainConfigManager().getMessages().get("bed_anchor_disabled_end")));
             e.setCancelled(true);
         }
@@ -285,11 +291,14 @@ public class PlayerListener implements Listener{
                 return;
             }
             EnderDragon dragon = dragonBattle.getEnderDragon();
-            if (dragon != null && !"&6&lPERMADEATH DEMON".equalsIgnoreCase(dragon.getBossBar().getTitle())){
+            if (dragon == null || dragon.getBossBar() == null){
+                return;
+            }
+            if (!"&6&lPERMADEATH DEMON".equalsIgnoreCase(dragon.getBossBar().getTitle())){
                 if (dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()/dragon.getHealth() < 2){
                     dragon.getBossBar().setColor(BarColor.BLUE);
                 }
-                dragon.customName(Component.text(MessageUtils.translateColor("&6&lPERMADEATH DEMON")));
+                dragon.customName(Component.text(Miscellaneous.translateColor("&6&lPERMADEATH DEMON")));
             }
        }
     }
@@ -301,7 +310,7 @@ public class PlayerListener implements Listener{
         PlainTextComponentSerializer serializer = PlainTextComponentSerializer.plainText();
         Team team = player.getScoreboard().getEntityTeam(player);
         String teamPrefix = team != null ? team.getDisplayName() : "";
-        Bukkit.broadcastMessage(MessageUtils.translateColor("%s&r%s: %s",teamPrefix,player.getName(),serializer.serialize(e.originalMessage())));
+        Bukkit.broadcastMessage(Miscellaneous.translateColor("%s&r%s: %s",teamPrefix,player.getName(),serializer.serialize(e.originalMessage())));
     }
 
 }

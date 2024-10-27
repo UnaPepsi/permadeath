@@ -1,15 +1,15 @@
 package pd.guimx;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Difficulty;
-import org.bukkit.GameRule;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
+import org.bukkit.*;
 import org.bukkit.plugin.java.JavaPlugin;
 import pd.guimx.commands.MainCommand;
 import pd.guimx.config.MainConfigManager;
 import pd.guimx.listeners.EntityListener;
 import pd.guimx.listeners.PlayerListener;
 import pd.guimx.utils.ManageDatabase;
-import pd.guimx.utils.MessageUtils;
+import pd.guimx.utils.Miscellaneous;
 
 import java.sql.SQLException;
 
@@ -21,23 +21,26 @@ public class Permadeath extends JavaPlugin {
 
     private MainConfigManager mainConfigManager;
     private PlayerListener playerListener;
+    private ProtocolManager protocolManager;
 
     public void onEnable(){
         this.playerListener = new PlayerListener(this);
         this.mainConfigManager = new MainConfigManager(this);
         this.prefix = mainConfigManager.getMessages().get("prefix");
+        generateVoidWorld();
+        protocolManager = ProtocolLibrary.getProtocolManager();
         this.db = new ManageDatabase();
         db.createTable();
         worldRules();
         registerCommands();
         registerEvents();
         startCounting();
-        Bukkit.getConsoleSender().sendMessage(MessageUtils.translateColor(prefix+"&ahas been enabled!"));
-        Bukkit.setMotd(MessageUtils.translateColor(mainConfigManager.getMessages().get("motd")));
+        Bukkit.getConsoleSender().sendMessage(Miscellaneous.translateColor(prefix+"&ahas been enabled!"));
+        Bukkit.setMotd(Miscellaneous.translateColor(mainConfigManager.getMessages().get("motd")));
     }
 
     public void onDisable(){
-        Bukkit.getConsoleSender().sendMessage(MessageUtils.translateColor(prefix+"&chas been disabled!"));
+        Bukkit.getConsoleSender().sendMessage(Miscellaneous.translateColor(prefix+"&chas been disabled!"));
         try {
             db.conn.close();
         } catch (SQLException e) {
@@ -63,6 +66,17 @@ public class Permadeath extends JavaPlugin {
         });
     }
 
+    private void generateVoidWorld(){
+        if (Bukkit.getWorld("pd_void") == null) {
+            Bukkit.getLogger().info(Miscellaneous.translateColor(prefix+"&epd_void world not found! Creating..."));
+            WorldCreator worldCreator = new WorldCreator("pd_void");
+            worldCreator.environment(World.Environment.NORMAL);
+            worldCreator.type(WorldType.FLAT);
+            worldCreator.generatorSettings("{\"layers\":[]}");
+            worldCreator.createWorld();
+        }
+    }
+
     public ManageDatabase getDb() {
         return db;
     }
@@ -76,5 +90,8 @@ public class Permadeath extends JavaPlugin {
     }
     private void startCounting(){
         Bukkit.getScheduler().runTaskTimer(this, () -> mainConfigManager.setHour(mainConfigManager.getHour()+1),0,3600*20); //every hour
+    }
+    public ProtocolManager getProtocolManager() {
+        return protocolManager;
     }
 }
