@@ -183,9 +183,6 @@ public class MainCommand implements CommandExecutor {
                     }
                     Miscellaneous.rotateEntitiesInLocation(permadeath,entities,player.getLocation(),Double.parseDouble(args[2]),10*20);
                     break;
-                case "superrotate":
-                    Miscellaneous.rotateArmorStandsInLocation3d(permadeath,player.getLocation(),Integer.parseInt(args[2]),Integer.parseInt(args[3]));
-                    break;
             }
         }
     }

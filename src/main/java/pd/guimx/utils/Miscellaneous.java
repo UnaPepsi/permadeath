@@ -1,9 +1,10 @@
 package pd.guimx.utils;
 
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.PacketContainer;
+import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockType;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
@@ -13,6 +14,8 @@ import pd.guimx.Permadeath;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class Miscellaneous {
     public static String translateColor(String message, Object... args){
@@ -80,6 +83,9 @@ public class Miscellaneous {
                 }
             };
             runnable.runTaskTimer(plugin,0,1L);
+            if (duration == -1){
+                return;
+            }
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 runnable.cancel();
                 //Vector direction = target.toVector().subtract(entitiesCopy.get(finalI).getLocation().toVector()).normalize();
@@ -88,37 +94,72 @@ public class Miscellaneous {
                 Bukkit.getScheduler().runTaskLater(plugin, () -> entitiesCopy.get(finalI).remove(), 20L);},duration);
             }
         }
-    public static void rotateArmorStandsInLocation3d(Permadeath plugin, Location target, int maxRadius, int amountPerEach){
-        //doesn't work at all
-        ArrayList<Entity> tempArray = new ArrayList<>();
-        for (int i = maxRadius; i > 0; i--){
-            for (int j = 1; j < amountPerEach; j++){
-                tempArray.add(target.getWorld().spawn(target.add(0, i*0.01,0),EntityType.ARMOR_STAND.getEntityClass(), spawnedEntity -> {
-                    ArmorStand armorStand = (ArmorStand) spawnedEntity;
-                    //armorStand.setMarker(true); //this makes armor stands not be able to have velocity
-                    armorStand.setNoPhysics(true);
-                    armorStand.setInvisible(true);
-                    armorStand.setItemInHand(new ItemStack(Material.DIAMOND_BLOCK));
-                }));
-            }
-            rotateEntitiesInLocation(plugin,tempArray,target,i,10*20);
-            tempArray.clear();
-        }
 
-        for (int i = maxRadius; i > 0; i--){
-            for (int j = 1; j < amountPerEach; j++){
-                tempArray.add(target.getWorld().spawn(target.subtract(0, i*0.01,0),EntityType.ARMOR_STAND.getEntityClass(), spawnedEntity -> {
-                    ArmorStand armorStand = (ArmorStand) spawnedEntity;
-                    //armorStand.setMarker(true); //this makes armor stands not be able to have velocity
-                    armorStand.setNoPhysics(true);
-                    armorStand.setInvisible(true);
-                    armorStand.setItemInHand(new ItemStack(Material.DIAMOND_BLOCK));
-                }));
-            }
-            rotateEntitiesInLocation(plugin,tempArray,target,i,10*20);
-            tempArray.clear();
+    public static void orbitEntitiesFollowEntity(Permadeath plugin, Entity entity, EntityType entityType, int amount, double scaleMultiplier, Supplier<Boolean> check){
+        ArrayList<Entity> entities = new ArrayList<>();
+        for (int i = 0; i < amount; i++){
+            entities.add(entity.getWorld().spawn(entity.getLocation().add(0,1,0),entityType.getEntityClass(),spawnedEntity -> {
+                if (spawnedEntity instanceof  LivingEntity livingEntity) {
+                    livingEntity.setNoPhysics(true);
+                    livingEntity.setCollidable(false);
+                    livingEntity.setInvulnerable(true);
+                    livingEntity.setGravity(false);
+                    livingEntity.setSilent(true);
+                    livingEntity.getAttribute(Attribute.GENERIC_SCALE).setBaseValue(livingEntity.getAttribute(Attribute.GENERIC_SCALE).getValue() * scaleMultiplier);
+                    if (spawnedEntity instanceof ArmorStand armorStand){
+                        armorStand.setGravity(true);
+                        armorStand.setInvisible(true);
+                        armorStand.setNoPhysics(true);
+                        armorStand.setItemInHand(new ItemStack(Material.GOLD_BLOCK));
+                    }
+                }
+                //livingEntity.setAI(false);
+            }));
+            final double angleOffset = i * (2 * Math.PI / amount);
+            final int finalI = i;
+            BukkitRunnable runnable = new BukkitRunnable() {
+                double angle = angleOffset;
+                @Override
+                public void run() {
+                    if (!check.get()){
+                        entities.get(finalI).remove();
+                        cancel();
+                    }
+                    angle += 0.05;
+                    //entities.get(finalI).setVelocity(new Vector(
+                    //        Math.cos(angle)*(entity.getWidth()+0.5),
+                    //        0,
+                    //        Math.sin(angle)*(entity.getWidth()+0.5)
+                    //).normalize());
+                    //double offset = entities.get(finalI) instanceof ArmorStand ? -0.1 : 0;
+                    Vector orbitVector = new Vector(
+                            Math.cos(angle)*(entity.getWidth()/2),
+                            0,
+                            Math.sin(angle)*(entity.getWidth()/2)).subtract(entities.get(finalI).getLocation().add(0,-1.9,0).toVector().subtract(entity.getLocation().toVector()));
+                    entities.get(finalI).setVelocity(orbitVector);
+                }
+            };
+            runnable.runTaskTimer(plugin,0,1);
         }
     }
 
+    public static void endermanPlayer(Player player,ProtocolManager protocolManager) {
+        Enderman enderman = (Enderman) player.getWorld().spawn(player.getLocation(), EntityType.ENDERMAN.getEntityClass());
+        PacketContainer packetContainer = protocolManager.createPacket(PacketType.Play.Server.CAMERA);
+        packetContainer.getIntegers().write(0, enderman.getEntityId());
+        protocolManager.sendServerPacket(player, packetContainer);
+        enderman.remove();
+        Location location = player.getEyeLocation();
+        player.teleport(new Location(Bukkit.getWorld("pd_void"), 0, 100, 0));
+        player.teleport(location);
+    }
 
+    public static void guardianJumpscare(Permadeath plugin, Player player){
+        for (int i = 0; i < 50; i++){
+            Bukkit.getScheduler().runTaskLater(plugin,() -> {
+                player.spawnParticle(Particle.ELDER_GUARDIAN,player.getLocation(),10);
+                player.playSound(player,Sound.ENTITY_ELDER_GUARDIAN_CURSE,1,1);
+            },i);
+        }
+    }
 }

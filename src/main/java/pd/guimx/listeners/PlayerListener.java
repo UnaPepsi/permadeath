@@ -1,6 +1,8 @@
 package pd.guimx.listeners;
 
+import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import io.papermc.paper.event.player.AsyncChatEvent;
+import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.md_5.bungee.api.ChatMessageType;
@@ -14,23 +16,32 @@ import org.bukkit.block.data.type.Bed;
 import org.bukkit.block.data.type.RespawnAnchor;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.DragonBattle;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EnderDragon;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityResurrectEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.inventory.SmithItemEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent.Status;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.SmithingInventory;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Vector;
 import pd.guimx.Permadeath;
 import pd.guimx.utils.Miscellaneous;
 import pd.guimx.utils.Webhook;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -43,6 +54,7 @@ public class PlayerListener implements Listener{
     Permadeath permadeath;
     private boolean isDeathTrain = false;
     private int[] deathTrainSecondsRemaining = {-1};
+    private final HashMap<Player, Boolean> playerElytraState = new HashMap<>();
     public PlayerListener(Permadeath permadeath){
         this.permadeath = permadeath;
     }
@@ -82,13 +94,6 @@ public class PlayerListener implements Listener{
     @EventHandler
     public void onDeath(PlayerDeathEvent e){
         Player player = e.getEntity();
-        if (e.getDamageSource().getCausingEntity() == player){
-            e.setDeathMessage("");
-            e.setKeepInventory(true);
-            e.setKeepLevel(true);
-            player.sendMessage("test");
-            return;
-        }
         this.isDeathTrain = true;
         Location location = player.getLocation();
 
@@ -313,4 +318,81 @@ public class PlayerListener implements Listener{
         Bukkit.broadcastMessage(Miscellaneous.translateColor("%s&r%s: %s",teamPrefix,player.getName(),serializer.serialize(e.originalMessage())));
     }
 
+    @EventHandler
+    public void onEat(PlayerItemConsumeEvent e){
+        ItemStack item = e.getItem();
+        Player player = e.getPlayer();
+        double maxHealth = player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+        if (item.getItemMeta().getCustomModelData() == 69 &&
+            item.getType() == Material.CLOCK &&
+            item.getItemMeta().getFood().getEatSeconds() == 5
+        ){
+            if (maxHealth < 24) {
+                player.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(maxHealth + 2);
+                player.sendMessage(Miscellaneous.translateColor(permadeath.prefix + "&ayou've gained 1 extra heart"));
+            }else{
+                player.sendMessage(Miscellaneous.translateColor(permadeath.prefix + "&cyou've exceeded the amount of times you can consume this"));
+                e.setCancelled(true);
+                Miscellaneous.endermanPlayer(player, permadeath.getProtocolManager()); //xd
+                Miscellaneous.guardianJumpscare(permadeath,player); //xd
+            }
+        }
+    }
+
+    @EventHandler
+    public void onInventoryUpdate(PlayerInventorySlotChangeEvent e){
+        Player player = e.getPlayer();
+        ItemStack chestplate = player.getEquipment().getChestplate();
+        boolean isWearingFireResistantElytra = chestplate != null
+                && chestplate.getType() == Material.ELYTRA
+                && chestplate.getItemMeta().isFireResistant();
+        Boolean previousState = playerElytraState.get(player);
+        //chestplate.getItemMeta().getAttributeModifiers().containsKey("fire_resistant")
+        if (isWearingFireResistantElytra && (previousState == null || !previousState)){
+            playerElytraState.put(player,true);
+            player.getAttribute(Attribute.GENERIC_GRAVITY).setBaseValue(0.04);
+            player.getAttribute(Attribute.GENERIC_SAFE_FALL_DISTANCE).setBaseValue(Integer.MAX_VALUE);
+            player.getAttribute(Attribute.GENERIC_SAFE_FALL_DISTANCE).setBaseValue(Integer.MAX_VALUE);
+            Miscellaneous.orbitEntitiesFollowEntity(permadeath,player, EntityType.ARMOR_STAND,16,0.2,() -> {
+                ItemStack chestplateCheck = player.getEquipment().getChestplate();
+                return chestplateCheck != null && chestplateCheck.getItemMeta().isFireResistant() && chestplateCheck.getType() == Material.ELYTRA;
+            });
+        }else if (!isWearingFireResistantElytra && (previousState == null || previousState)){
+            playerElytraState.remove(player);
+            player.getAttribute(Attribute.GENERIC_GRAVITY).setBaseValue(0.08);
+            player.getAttribute(Attribute.GENERIC_SAFE_FALL_DISTANCE).setBaseValue(3.0);
+        }
+    }
+
+    @EventHandler
+    public void onPreparedCraft(PrepareItemCraftEvent e){
+        if (e.getInventory().getMaxStackSize() < 9) {return;}
+        ItemStack[] items = e.getInventory().getMatrix();
+        if (items.length < 9) {return;}
+        for (int i = 0; i < 3; i++){
+            if (items[i].getType() != Material.FEATHER || items[8-i].getType() != Material.FEATHER){
+                return;
+            }
+        }
+        if (items[3].getType() != Material.FEATHER || items[5].getType() != Material.FEATHER || items[4].getType() != Material.ELYTRA){
+            return;
+        }
+        ItemMeta resultMeta = items[4].getItemMeta();
+        resultMeta.setFireResistant(true);
+        resultMeta.setDisplayName(Miscellaneous.translateColor("&6Super Elytra"));
+        items[4].setItemMeta(resultMeta);
+        e.getInventory().setResult(items[4]);
+    }
+
+    @EventHandler
+    public void onRightClick(PlayerArmorStandManipulateEvent e){
+        Bukkit.getLogger().info("event");
+        ArmorStand stand = e.getRightClicked();
+        if (stand.isInvisible() && stand.hasNoPhysics()){
+            Bukkit.getLogger().info("asdjk");
+            e.setCancelled(true);
+        }else{
+            Bukkit.getLogger().info(""+stand.isInvisible()+""+stand.hasNoPhysics());
+        }
+    }
 }

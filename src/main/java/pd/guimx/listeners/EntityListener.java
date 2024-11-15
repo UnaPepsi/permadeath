@@ -250,6 +250,10 @@ public class EntityListener implements Listener {
                     endermite.addPotionEffect(spiderEffects.get(random.nextInt(spiderEffects.size())));
                 }
             }
+        }else if (entity instanceof Zombie zombie){
+            if (zombie.isBaby() && day > 29){
+                zombie.getAttribute(Attribute.GENERIC_SCALE).setBaseValue(zombie.getAttribute(Attribute.GENERIC_SCALE).getValue()/2);
+            }
         }
 
         if (day > 20 && entity instanceof Enemy enemy && permadeath.getPlayerListener().isDeathTrain()){
