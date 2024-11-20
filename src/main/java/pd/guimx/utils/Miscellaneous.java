@@ -14,6 +14,7 @@ import pd.guimx.Permadeath;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -66,34 +67,51 @@ public class Miscellaneous {
         }
     }
 
-    public static void rotateEntitiesInLocation(Permadeath plugin, ArrayList<Entity> entities, Location target, double radius, long duration){
-        ArrayList<Entity> entitiesCopy = new ArrayList<>(entities);
+    public static void rotateEntitiesInLocation(Permadeath plugin, List<Entity> entities, Location target, double radius, long duration) {
+        List<Entity> entitiesCopy = new ArrayList<>(entities);
+
         for (int i = 0; i < entitiesCopy.size(); i++) {
             final double[] start = {i};
             final int finalI = i;
+
             BukkitRunnable runnable = new BukkitRunnable() {
                 @Override
                 public void run() {
                     start[0] += 0.1;
-                    entitiesCopy.get(finalI).setVelocity(new Vector(
-                            Math.cos(start[0])*radius,
+                    Vector velocity = new Vector(
+                            Math.cos(start[0]) * radius,
                             0,
-                            Math.sin(start[0])*radius
-                    ).normalize().multiply(radius / 50));
+                            Math.sin(start[0]) * radius
+                    ).normalize().multiply(Math.max(radius, 0.0001) / 50);
+
+                    if (Double.isFinite(velocity.getX()) && Double.isFinite(velocity.getY()) && Double.isFinite(velocity.getZ())) {
+                        Entity entity = entitiesCopy.get(finalI);
+                        if (entity != null && entity.isValid()) {
+                            entity.setVelocity(velocity);
+                        } else {
+                            cancel();
+                        }
+                    } else {
+                        cancel();
+                    }
                 }
             };
-            runnable.runTaskTimer(plugin,0,1L);
-            if (duration == -1){
-                return;
-            }
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                runnable.cancel();
-                //Vector direction = target.toVector().subtract(entitiesCopy.get(finalI).getLocation().toVector()).normalize();
-                Vector direction = target.toVector().subtract(entitiesCopy.get(finalI).getLocation().toVector()).multiply(2).normalize().setY(0.5); //looks somewhat good and I have no idea why
-                entitiesCopy.get(finalI).setVelocity(direction);
-                Bukkit.getScheduler().runTaskLater(plugin, () -> entitiesCopy.get(finalI).remove(), 20L);},duration);
+            runnable.runTaskTimer(plugin, 0, 1L);
+
+            if (duration != -1) {
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    runnable.cancel();
+                    Entity entity = entitiesCopy.get(finalI);
+                    if (entity != null && entity.isValid()) {
+                        Vector direction = target.toVector().subtract(entity.getLocation().toVector())
+                                .multiply(2).normalize().setY(0.5);
+                        entity.setVelocity(direction);
+                        Bukkit.getScheduler().runTaskLater(plugin, entity::remove, 20L);
+                    }
+                }, duration);
             }
         }
+    }
 
     public static void orbitEntitiesFollowEntity(Permadeath plugin, Entity entity, EntityType entityType, int amount, double scaleMultiplier, Supplier<Boolean> check){
         ArrayList<Entity> entities = new ArrayList<>();

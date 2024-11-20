@@ -45,7 +45,7 @@ public class Permadeath extends JavaPlugin {
         registerCommands();
         registerEvents();
         startCounting();
-        if (getMainConfigManager().getDay() > 39) {
+        if (getMainConfigManager().getDay() > 29) {
             registerCustomRecipes();
         }
         Bukkit.getConsoleSender().sendMessage(Miscellaneous.translateColor(prefix+"&ahas been enabled!"));

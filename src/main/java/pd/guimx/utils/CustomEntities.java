@@ -188,4 +188,48 @@ public class CustomEntities {
         pigman.getEquipment().setBoots(new ItemStack(Material.DIAMOND_BOOTS));
     }
 
+    public static void setZombieFullNetherite(Zombie zombie){
+        zombie.getEquipment().setHelmet(new ItemStack(Material.NETHERITE_HELMET));
+        zombie.getEquipment().setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
+        zombie.getEquipment().setLeggings(new ItemStack(Material.NETHERITE_LEGGINGS));
+        zombie.getEquipment().setBoots(new ItemStack(Material.NETHERITE_BOOTS));
+
+        zombie.getEquipment().setHelmetDropChance(0);
+        zombie.getEquipment().setChestplateDropChance(0);
+        zombie.getEquipment().setLeggingsDropChance(0);
+        zombie.getEquipment().setBootsDropChance(0);
+    }
+
+    public static void setZombieChainmailFireAxe(Zombie zombie){
+        zombie.getEquipment().setHelmet(new ItemStack(Material.CHAINMAIL_HELMET));
+        zombie.getEquipment().setChestplate(new ItemStack(Material.CHAINMAIL_CHESTPLATE));
+        zombie.getEquipment().setLeggings(new ItemStack(Material.CHAINMAIL_LEGGINGS));
+        zombie.getEquipment().setBoots(new ItemStack(Material.CHAINMAIL_BOOTS));
+
+        zombie.getEquipment().setHelmetDropChance(0);
+        zombie.getEquipment().setChestplateDropChance(0);
+        zombie.getEquipment().setLeggingsDropChance(0);
+        zombie.getEquipment().setBootsDropChance(0);
+
+        ItemStack axe = new ItemStack(Material.IRON_AXE);
+        axe.addUnsafeEnchantment(Enchantment.FIRE_ASPECT,20);
+        zombie.getEquipment().setItemInMainHand(axe);
+        zombie.getEquipment().setItemInMainHandDropChance(0);
+    }
+
+    public static void setZombieInGoat(Zombie zombie){
+        zombie.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(30);
+        zombie.setHealth(zombie.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue());
+        zombie.getWorld().spawn(zombie.getLocation(), EntityType.GOAT.getEntityClass(), spawnedEntity -> {
+           spawnedEntity.addPassenger(zombie);
+        });
+    }
+    public static void setZombieInCreeper(Zombie zombie){
+        zombie.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(30);
+        zombie.setHealth(zombie.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue());
+        zombie.getWorld().spawn(zombie.getLocation(), EntityType.CREEPER.getEntityClass(), spawnedEntity -> {
+           spawnedEntity.addPassenger(zombie);
+        });
+    }
+
 }

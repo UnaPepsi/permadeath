@@ -16,16 +16,11 @@ import org.bukkit.block.data.type.Bed;
 import org.bukkit.block.data.type.RespawnAnchor;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.DragonBattle;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.EnderDragon;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.entity.EntityInteractEvent;
-import org.bukkit.event.entity.EntityResurrectEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.inventory.SmithItemEvent;
 import org.bukkit.event.player.*;
@@ -34,7 +29,9 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.SmithingInventory;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.Team;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import pd.guimx.Permadeath;
 import pd.guimx.utils.Miscellaneous;
@@ -267,12 +264,23 @@ public class PlayerListener implements Listener{
     public void onMove(PlayerMoveEvent e){
         Location loc = e.getTo().clone();
         loc.setY(e.getTo().getY()-0.1);
+        Player player = e.getPlayer();
         if (loc.getBlock().getType() == Material.BEDROCK){
 
             //For some reason, even with a higher y vector, the velocity is the same, just that for some reason,
             //when I take damage, if I set the Vector to have a higher y the velocity applies multiple times.
             //My theory is that because I didn't reach the Vector I set, I get pushed until the number is reached
-            e.getPlayer().setVelocity(new Vector(0,10,0));
+            player.setVelocity(new Vector(0,10,0));
+        }else if ((loc.add(0,2,0).getBlock().getType() == Material.WATER ||
+                    loc.add(0,-1,0).getBlock().getType() == Material.WATER && player.isSwimming()) &&
+                    permadeath.getMainConfigManager().getDay() > 19){
+            player.setRemainingAir(player.getRemainingAir() >= 0 ? (int) (player.getRemainingAir() * 0.75) : player.getRemainingAir());
+        }
+        if (permadeath.getMainConfigManager().getDay() > 29){
+            RayTraceResult result = player.getWorld().rayTraceBlocks(player.getLocation(),new Vector(0,385-player.getY(),0),385);
+            if ((result == null || result.getHitBlock() == null) && !player.getWorld().isClearWeather() && !isDeathTrain){
+                player.damage(0.05);
+            }
         }
     }
 
@@ -323,7 +331,7 @@ public class PlayerListener implements Listener{
         ItemStack item = e.getItem();
         Player player = e.getPlayer();
         double maxHealth = player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
-        if (item.getItemMeta().getCustomModelData() == 69 &&
+        if (item.getItemMeta().hasCustomModelData() && item.getItemMeta().getCustomModelData() == 69 &&
             item.getType() == Material.CLOCK &&
             item.getItemMeta().getFood().getEatSeconds() == 5
         ){
@@ -380,8 +388,9 @@ public class PlayerListener implements Listener{
         ItemMeta resultMeta = items[4].getItemMeta();
         resultMeta.setFireResistant(true);
         resultMeta.setDisplayName(Miscellaneous.translateColor("&6Super Elytra"));
-        items[4].setItemMeta(resultMeta);
-        e.getInventory().setResult(items[4]);
+        ItemStack result = items[4].clone();
+        result.setItemMeta(resultMeta);
+        e.getInventory().setResult(result);
     }
 
     @EventHandler
@@ -393,6 +402,50 @@ public class PlayerListener implements Listener{
             e.setCancelled(true);
         }else{
             Bukkit.getLogger().info(""+stand.isInvisible()+""+stand.hasNoPhysics());
+        }
+    }
+
+    @EventHandler
+    public void onDamageByEntity(EntityDamageByEntityEvent e){
+        if (permadeath.getMainConfigManager().getDay() > 20 && e.getEntity() instanceof Player player) {
+            Entity damager = e.getDamageSource().getCausingEntity();
+            if (!(damager instanceof Monster || damager instanceof Phantom || damager instanceof Slime)) {
+                player.sendActionBar(Miscellaneous.translateColor("&cyou can't jump!"));
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        player.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).setBaseValue(0);
+                        Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                            player.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).setBaseValue(
+                                    player.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).getDefaultValue()
+                            );
+                            cancel();
+                        }, 2 * 20);
+                    }
+                }.runTaskTimer(permadeath, 0, 1);
+            }
+            if (damager instanceof Goat goat) {
+                player.setVelocity(goat.getLocation().getDirection().setY(0).normalize().multiply(20));
+            }else if (damager instanceof Slime){
+                new BukkitRunnable(){
+                    @Override
+                    public void run() {
+                        player.getAttribute(Attribute.GENERIC_SCALE).setBaseValue(0.2);
+                        player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.05);
+                        Bukkit.getScheduler().runTaskLater(permadeath,() -> {
+                            player.getAttribute(Attribute.GENERIC_SCALE).setBaseValue(1);
+                            player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.10000000149011612);
+                            cancel();
+                        },5*20);
+                    }
+                }.runTaskTimer(permadeath,0,1);
+            }
+        }
+    }
+    @EventHandler
+    public void onAnyDamage(EntityDamageEvent e){
+        if (e.getEntity() instanceof Player && e.getCause() == EntityDamageEvent.DamageCause.DROWNING && permadeath.getMainConfigManager().getDay() > 19){
+            e.setDamage(e.getDamage()*10);
         }
     }
 }

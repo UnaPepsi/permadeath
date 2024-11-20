@@ -1,5 +1,6 @@
 package pd.guimx.listeners;
 
+import com.destroystokyo.paper.event.entity.CreeperIgniteEvent;
 import io.papermc.paper.event.entity.EntityMoveEvent;
 import io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent;
 import net.kyori.adventure.text.Component;
@@ -17,6 +18,7 @@ import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.util.Vector;
 import pd.guimx.Permadeath;
@@ -175,6 +177,7 @@ public class EntityListener implements Listener {
         }else if (entity instanceof Creeper creeper){
             if (day > 29) {
                 creeper.setPowered(true);
+                creeper.setExplosionRadius(6); //doubled
             }
         }else if (entity instanceof Skeleton skelly){
             if (day > 29){
@@ -251,9 +254,29 @@ public class EntityListener implements Listener {
                 }
             }
         }else if (entity instanceof Zombie zombie){
-            if (zombie.isBaby() && day > 29){
-                zombie.getAttribute(Attribute.GENERIC_SCALE).setBaseValue(zombie.getAttribute(Attribute.GENERIC_SCALE).getValue()/2);
+            if (day > 29){
+                if (!zombie.isAdult()) {
+                    zombie.getAttribute(Attribute.GENERIC_SCALE).setBaseValue(zombie.getAttribute(Attribute.GENERIC_SCALE).getValue() / 2);
+                }else{
+                    switch (random.nextInt(1,5)){
+                        case 1:
+                            CustomEntities.setZombieChainmailFireAxe(zombie);
+                            break;
+                        case 2:
+                            CustomEntities.setZombieFullNetherite(zombie);
+                            break;
+                        case 3:
+                            CustomEntities.setZombieInGoat(zombie);
+                            break;
+                        case 4:
+                            CustomEntities.setZombieInCreeper(zombie);
+                            break;
+                    }
+                }
             }
+        }else if (entity instanceof Wither wither){
+            wither.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(400); //base is 300
+            // wither.setHealth(400); //wither heals itself
         }
 
         if (day > 20 && entity instanceof Enemy enemy && permadeath.getPlayerListener().isDeathTrain()){
@@ -341,6 +364,12 @@ public class EntityListener implements Listener {
                 }
             }
         }
+        if (shooter instanceof Wither && random.nextFloat() < 0.08){
+            Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                Location shootLocation = e.getHitBlock().getLocation();
+                e.getHitBlock().getWorld().spawn(shootLocation,EntityType.WITHER_SKELETON.getEntityClass());
+            },20);
+        }
     }
     @EventHandler
     public void onMove(EntityMoveEvent e) {
@@ -372,6 +401,12 @@ public class EntityListener implements Listener {
             }
 
             if (mob instanceof Monster){
+                if (mob instanceof Creeper && permadeath.getMainConfigManager().getDay() > 29){
+                    double distanceBetween = mob.getLocation().distance(player.getLocation());
+                    mob.getAttribute(Attribute.GENERIC_SCALE).setBaseValue(
+                            distanceBetween < 20 ? Math.max(distanceBetween / 20, 0.3) : 1.0
+                    );
+                }
                 if (mob instanceof PigZombie pigZombie){
                     pigZombie.setTarget(player);
                     pigZombie.setAngry(true);
@@ -429,41 +464,41 @@ public class EntityListener implements Listener {
             }
         }
         int day =  permadeath.getMainConfigManager().getDay();
-        if (!(entity instanceof Creeper creeper) || creeper.getHealth() <= 0){
+        if (!(entity instanceof Creeper || entity instanceof Ghast) || ((LivingEntity)entity).getHealth() <= 0){
             return;
         }
         if (!"world_the_end".equalsIgnoreCase(entity.getWorld().getName())){
             return;
         }
         if (day > 29){
-            if (random.nextDouble() < 0.33 || e.getDamageSource().getDamageType() == DamageType.ARROW) {
-                Location loc = creeper.getLocation();
+            if (random.nextDouble() < 0.33 || (e.getDamageSource().getDamageType() == DamageType.ARROW && entity instanceof Creeper)) {
+                Location loc = entity.getLocation();
                 Location teleportLocation;
                 Entity attacker = e.getDamageSource().getCausingEntity();
-                if (attacker != null && e.getDamageSource().getDamageType() == DamageType.ARROW && random.nextDouble() < 0.2){
+                if (attacker != null && e.getDamageSource().getDamageType() == DamageType.ARROW && random.nextDouble() < 0.2 && entity instanceof Creeper){
                     teleportLocation = attacker.getLocation();
                     if (attacker instanceof Player player){
                         player.playSound(player,"custom:scream",5,1); //xd
                     }
                 }else {
                     teleportLocation = loc.clone().add(random.nextInt(-30,30), 0, random.nextInt(-30,30));
-                    teleportLocation = creeper.getWorld().getHighestBlockAt(teleportLocation).getLocation();
-                    teleportLocation.setY(teleportLocation.getY() + 1);
+                    teleportLocation = entity.getWorld().getHighestBlockAt(teleportLocation).getLocation();
+                    teleportLocation.setY(teleportLocation.getY() + (entity instanceof Creeper ? 1 : 30));
                 }
 
                 if (teleportLocation.getBlockY() <= -64){ //void
                     return;
                 }
 
-                EntityTeleportEvent teleportEvent = new EntityTeleportEvent(creeper, loc, teleportLocation);
+                EntityTeleportEvent teleportEvent = new EntityTeleportEvent(entity, loc, teleportLocation);
                 Bukkit.getPluginManager().callEvent(teleportEvent);
 
                 if (!teleportEvent.isCancelled()) {
                     //Bukkit.broadcastMessage(teleportLocation.getBlock().toString()+teleportLocation.getBlockY());
                     e.setCancelled(true);
-                    creeper.getWorld().playSound(creeper.getLocation(),Sound.ENTITY_ENDERMAN_TELEPORT,5,1);
-                    creeper.getWorld().spawnParticle(Particle.PORTAL,creeper.getEyeLocation(),100);
-                    creeper.teleport(teleportEvent.getTo());
+                    entity.getWorld().playSound(entity.getLocation(),Sound.ENTITY_ENDERMAN_TELEPORT,5,1);
+                    entity.getWorld().spawnParticle(Particle.PORTAL,((LivingEntity)entity).getEyeLocation(),100);
+                    entity.teleport(teleportEvent.getTo());
                 }
             }
         }
@@ -546,6 +581,22 @@ public class EntityListener implements Listener {
                                 areaEffectCloud.addCustomEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20 * 10, 2), true);
                                 areaEffectCloud.addCustomEffect(new PotionEffect(PotionEffectType.NAUSEA, 20 * 10, 5), true);
                                 areaEffectCloud.addCustomEffect(new PotionEffect(PotionEffectType.WEAKNESS, 20 * 10, 255),true);
+                                new BukkitRunnable(){
+                                    @Override
+                                    public void run() {
+                                        Location areaLocation = spawnedCloud.getLocation();
+                                        areaLocation.getNearbyPlayers(10).forEach(ppp -> {
+                                            if (areaLocation.distance(ppp.getLocation()) > 0) { //causes java.lang.IllegalArgumentException: x not finite if distance is 0
+                                                ppp.setVelocity(areaLocation.toVector().subtract(ppp.getLocation().toVector()).normalize().multiply(0.1));
+                                            }
+                                        });
+                                        Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                                            if (!this.isCancelled()){
+                                                this.cancel();
+                                            }
+                                        }, 20 * 6);
+                                    }
+                                }.runTaskTimer(permadeath,40,2);
                             });
                         }, 20 * 5);
                     });
@@ -564,6 +615,11 @@ public class EntityListener implements Listener {
                         TNTPrimed tntPrimed = (TNTPrimed) spawnedEntity;
                         tntPrimed.setSource(dragon);
                         tntPrimed.setYield(8);
+                        if (locations.getFirst() == (location)) { //only play sound once
+                            Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                                tntPrimed.getWorld().playSound(tntPrimed,"custom:elprimo",1,1+random.nextFloat(-0.2f,0.3f)); //eeeel primooo :V
+                            }, 20 * 2); //tnt takes 4 seconds to explode by default
+                        }
                     });
                 }
             } else {

@@ -3,16 +3,17 @@ package pd.guimx.commands;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.*;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 import pd.guimx.Permadeath;
 import pd.guimx.utils.Miscellaneous;
 
@@ -143,11 +144,15 @@ public class MainCommand implements CommandExecutor {
                         }
                         player.setGameMode(player.getPreviousGameMode());
                     }else if ("world".equalsIgnoreCase(args[2])){
-                        player.teleport(new Location(Bukkit.getWorld("afevoid"),0,100,0));
+                        player.teleport(new Location(Bukkit.getWorld("pd_void"),0,100,0));
                         player.teleport(location);
                     }
                     break;
                 case "zawarudo": //xd
+                    if (args.length < 3){
+                        player.sendMessage("ticks needed");
+                        return;
+                    }
                     Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),"tick freeze");
                     Bukkit.getOnlinePlayers().forEach(p -> {
                         double speed = p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).getValue();
@@ -182,6 +187,33 @@ public class MainCommand implements CommandExecutor {
                         entities.add(stand);
                     }
                     Miscellaneous.rotateEntitiesInLocation(permadeath,entities,player.getLocation(),Double.parseDouble(args[2]),10*20);
+                    break;
+                case "push":
+                    player.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 20 * 5, 1));
+                    Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                        player.getWorld().spawn(player.getLocation(), EntityType.AREA_EFFECT_CLOUD.getEntityClass(), spawnedCloud -> {
+                            AreaEffectCloud areaEffectCloud = (AreaEffectCloud) spawnedCloud;
+                            areaEffectCloud.setRadius(3);
+                            areaEffectCloud.setParticle(Particle.RAID_OMEN);
+                            areaEffectCloud.addCustomEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20 * 10, 2), true);
+                            areaEffectCloud.addCustomEffect(new PotionEffect(PotionEffectType.NAUSEA, 20 * 10, 5), true);
+                            areaEffectCloud.addCustomEffect(new PotionEffect(PotionEffectType.WEAKNESS, 20 * 10, 255),true);
+                            new BukkitRunnable(){
+                                @Override
+                                public void run() {
+                                    Location areaLocation = spawnedCloud.getLocation();
+                                    areaLocation.getNearbyPlayers(10).forEach(ppp -> {
+                                        ppp.setVelocity(areaLocation.toVector().subtract(ppp.getLocation().toVector()).normalize().multiply(0.1));
+                                    });
+                                    Bukkit.getScheduler().runTaskLater(permadeath, this::cancel, 20 * 7);
+                                }
+                            }.runTaskTimer(permadeath,40,2); //0.5 & 10, 0.2 & 5, 0.1 & 2
+                        });
+                    }, 20 * 5);
+                    break;
+                case "pumpkin":
+                    Inventory inv = Bukkit.createInventory(null,9,"ola");
+                    player.openInventory(inv);
                     break;
             }
         }
