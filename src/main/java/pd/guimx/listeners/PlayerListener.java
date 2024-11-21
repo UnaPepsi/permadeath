@@ -16,6 +16,8 @@ import org.bukkit.block.data.type.Bed;
 import org.bukkit.block.data.type.RespawnAnchor;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.DragonBattle;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -52,6 +54,7 @@ public class PlayerListener implements Listener{
     private boolean isDeathTrain = false;
     private int[] deathTrainSecondsRemaining = {-1};
     private final HashMap<Player, Boolean> playerElytraState = new HashMap<>();
+    private HashMap<Player,Integer> playersWithRabies = new HashMap<>(); // LMFAO its a funny idea ok? 😭
     public PlayerListener(Permadeath permadeath){
         this.permadeath = permadeath;
     }
@@ -278,7 +281,7 @@ public class PlayerListener implements Listener{
         }
         if (permadeath.getMainConfigManager().getDay() > 29){
             RayTraceResult result = player.getWorld().rayTraceBlocks(player.getLocation(),new Vector(0,385-player.getY(),0),385);
-            if ((result == null || result.getHitBlock() == null) && !player.getWorld().isClearWeather() && !isDeathTrain){
+            if ((result == null || result.getHitBlock() == null) && !player.getWorld().isClearWeather() && isDeathTrain){
                 player.damage(0.05);
             }
         }
@@ -408,6 +411,9 @@ public class PlayerListener implements Listener{
     @EventHandler
     public void onDamageByEntity(EntityDamageByEntityEvent e){
         if (permadeath.getMainConfigManager().getDay() > 20 && e.getEntity() instanceof Player player) {
+            if (player.getWorld().isUltraWarm()){
+                player.setFireTicks(20*10);
+            }
             Entity damager = e.getDamageSource().getCausingEntity();
             if (!(damager instanceof Monster || damager instanceof Phantom || damager instanceof Slime)) {
                 player.sendActionBar(Miscellaneous.translateColor("&cyou can't jump!"));
@@ -439,6 +445,32 @@ public class PlayerListener implements Listener{
                         },5*20);
                     }
                 }.runTaskTimer(permadeath,0,1);
+            }else if (damager instanceof Wolf){
+                if (playersWithRabies.get(player) == null){
+                    playersWithRabies.put(player,10);
+                    player.sendMessage(Miscellaneous.translateColor(permadeath.prefix+"&cyou have been infected with rabies, drink a milk bucket within the next 20 minutes " +
+                            "or you'll die. Disconnecting will also kill you"));
+                    Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                        if (playersWithRabies.get(player) != null){
+                            player.clearActivePotionEffects(); //just in case they have resistance 5 or sum
+                            player.damage(Integer.MAX_VALUE, DamageSource.builder(DamageType.MAGIC).build());
+                            playersWithRabies.remove(player);
+                        }
+                    }, 20L *playersWithRabies.get(player));
+                    new BukkitRunnable(){
+                        @Override
+                        public void run() {
+                            if (playersWithRabies.get(player) == null){
+                                player.sendActionBar(Miscellaneous.translateColor("&ayou have been cured!"));
+                                cancel();
+                                return;
+                            }
+                            player.sendActionBar(Miscellaneous.translateColor("&7Find a cure before: %02d:%02d:%02d",
+                                    playersWithRabies.get(player)/3600,(playersWithRabies.get(player)%3600)/60,playersWithRabies.get(player)%60));
+                            playersWithRabies.put(player, playersWithRabies.getOrDefault(player,-1)-1);
+                        }
+                    }.runTaskTimer(permadeath,0,20);
+                }
             }
         }
     }
@@ -446,6 +478,13 @@ public class PlayerListener implements Listener{
     public void onAnyDamage(EntityDamageEvent e){
         if (e.getEntity() instanceof Player && e.getCause() == EntityDamageEvent.DamageCause.DROWNING && permadeath.getMainConfigManager().getDay() > 19){
             e.setDamage(e.getDamage()*10);
+        }
+    }
+
+    @EventHandler
+    public void onConsume(PlayerItemConsumeEvent e){
+        if (e.getItem().getType() == Material.MILK_BUCKET && playersWithRabies.get(e.getPlayer()) != null){
+            playersWithRabies.remove(e.getPlayer());
         }
     }
 }
