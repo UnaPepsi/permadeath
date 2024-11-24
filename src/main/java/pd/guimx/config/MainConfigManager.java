@@ -17,6 +17,7 @@ public class MainConfigManager {
     private HashMap<String,String> messages = new HashMap<>();
     private List<String> discordWebhooks;
     private int startingLives;
+    private int rabiesSeconds;
 
     public MainConfigManager(Permadeath permadeath){
         this.permadeath = permadeath;
@@ -30,6 +31,7 @@ public class MainConfigManager {
         this.hour = config.getInt("config.hour");
         this.minPlayersSleep = config.getInt("config.minimum_players_sleep_needed");
         this.deathTrainSeconds = config.getInt("config.death_train_seconds");
+        this.rabiesSeconds = config.getInt("config.rabies_seconds");
         messages.put("prefix",config.getString("messages.prefix"));
         messages.put("player_banned",config.getString("messages.player_banned"));
         messages.put("player_joined",config.getString("messages.player_joined"));
@@ -54,6 +56,12 @@ public class MainConfigManager {
         messages.put("remaining_lifes",(config.getString("messages.remaining_lifes")));
         messages.put("motd",config.getString(getDay() > 29 ? "messages.motd_day_30" : "messages.motd_before_day_30"));
         messages.put("dragon_heal",config.getString("messages.dragon_heal"));
+        messages.put("jump_disabled",config.getString("messages.jump_disabled"));
+        messages.put("rabies_infected",config.getString("messages.rabies_infected"));
+        messages.put("rabies_timer",config.getString("messages.rabies_timer"));
+        messages.put("rabies_cured",config.getString("messages.rabies_cured"));
+        messages.put("extra_heart_gained",config.getString("messages.extra_heart_gained"));
+        messages.put("extra_heart_limit_reached",config.getString("messages.extra_heart_limit_reached"));
         Bukkit.setMotd(Miscellaneous.translateColor(messages.get("motd")));
     }
 
@@ -86,5 +94,9 @@ public class MainConfigManager {
     }
     public int getStartingLives(){
         return startingLives;
+    }
+
+    public int getRabiesSeconds() {
+        return rabiesSeconds;
     }
 }

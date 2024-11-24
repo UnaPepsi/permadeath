@@ -4,6 +4,7 @@ config:
   death_train_seconds: 3600
   discord_webhooks: []
   starting_lives: 3
+  rabies_seconds: 20
 messages:
   prefix: "&8[&4&lPermadeath&r&8]&r "
   player_banned: "&c&lPERMADEATH!&r\nYou have died and are no longer allowed to join back" #f*ck no im not making it a list
@@ -28,3 +29,9 @@ messages:
   motd_before_day_30: "You won't last longer than 30 seconds... wait"
   motd_day_30: "                 &c&l&kii &4&lWELCOME TO HELL &c&l&kii"
   dragon_heal: "&cDemon is healing itself!"
+  jump_disabled: "&cYou can't jump!"
+  rabies_infected: "&cYou have been infected with rabies, drink a milk bucked within the next %d minutes or you'll die. Disconnecting before that time will also kill you"
+  rabies_timer: "&7Find a cure before: %02d:%02d:%02d"
+  rabies_cured: "&aYou have been cured!"
+  extra_heart_gained: "&aYou've gained 1 extra heart"
+  extra_heart_limit_reached: "&cYou've exceeded the amount of times you can consume this"

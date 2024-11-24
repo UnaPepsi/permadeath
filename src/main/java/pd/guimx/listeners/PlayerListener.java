@@ -75,10 +75,15 @@ public class PlayerListener implements Listener{
         permadeath.getDb().addUser(player.getName(),permadeath.getMainConfigManager().getStartingLives());
         e.setJoinMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("player_joined"),
                 player.getName(),permadeath.getDb().getLifes(player.getName())));
-        player.setResourcePack("https://fun.guimx.me/r/permadeath.zip?compress=false",
-              HexFormat.of().parseHex("abfaa1a8b810e81f85aa542166aaa8950f19c7c7"), Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("texture_pack")),false);
+        player.setResourcePack("https://fun.guimx.me/r/permadeath2.0.zip?compress=false",
+              HexFormat.of().parseHex("59f268a27bdffb0e4dbee66bfb171c7c4875f803"), Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("texture_pack")),false);
         player.sendMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("current_day"),
                 permadeath.getMainConfigManager().getDay()));
+        player.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).setBaseValue(
+                player.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).getDefaultValue()
+        );
+        player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.10000000149011612);
+        player.getAttribute(Attribute.GENERIC_SCALE).setBaseValue(1);
     }
 
     @EventHandler
@@ -88,12 +93,20 @@ public class PlayerListener implements Listener{
             e.getPlayer().kickPlayer(Miscellaneous.translateColor(permadeath.prefix+
                     permadeath.getMainConfigManager().getMessages().get("texture_pack_denied")));
         }
-
-
     }
+
+    @EventHandler
+    public void onDisconect(PlayerQuitEvent e){
+        if (playersWithRabies.containsKey(e.getPlayer())) {
+            e.getPlayer().clearActivePotionEffects();
+            e.getPlayer().damage(5000, DamageSource.builder(DamageType.MAGIC).build());
+        }
+    }
+
     @EventHandler
     public void onDeath(PlayerDeathEvent e){
         Player player = e.getEntity();
+        playersWithRabies.remove(player);
         this.isDeathTrain = true;
         Location location = player.getLocation();
 
@@ -281,7 +294,7 @@ public class PlayerListener implements Listener{
         }
         if (permadeath.getMainConfigManager().getDay() > 29){
             RayTraceResult result = player.getWorld().rayTraceBlocks(player.getLocation(),new Vector(0,385-player.getY(),0),385);
-            if ((result == null || result.getHitBlock() == null) && !player.getWorld().isClearWeather() && isDeathTrain){
+            if ((result == null || result.getHitBlock() == null) && !player.getWorld().isClearWeather() && isDeathTrain && random.nextFloat() < 0.05){
                 player.damage(0.05);
             }
         }
@@ -340,9 +353,9 @@ public class PlayerListener implements Listener{
         ){
             if (maxHealth < 24) {
                 player.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(maxHealth + 2);
-                player.sendMessage(Miscellaneous.translateColor(permadeath.prefix + "&ayou've gained 1 extra heart"));
+                player.sendMessage(Miscellaneous.translateColor(permadeath.prefix + permadeath.getMainConfigManager().getMessages().get("extra_heart_gained")));
             }else{
-                player.sendMessage(Miscellaneous.translateColor(permadeath.prefix + "&cyou've exceeded the amount of times you can consume this"));
+                player.sendMessage(Miscellaneous.translateColor(permadeath.prefix + permadeath.getMainConfigManager().getMessages().get("extra_heart_limit_reached")));
                 e.setCancelled(true);
                 Miscellaneous.endermanPlayer(player, permadeath.getProtocolManager()); //xd
                 Miscellaneous.guardianJumpscare(permadeath,player); //xd
@@ -366,7 +379,8 @@ public class PlayerListener implements Listener{
             player.getAttribute(Attribute.GENERIC_SAFE_FALL_DISTANCE).setBaseValue(Integer.MAX_VALUE);
             Miscellaneous.orbitEntitiesFollowEntity(permadeath,player, EntityType.ARMOR_STAND,16,0.2,() -> {
                 ItemStack chestplateCheck = player.getEquipment().getChestplate();
-                return chestplateCheck != null && chestplateCheck.getItemMeta().isFireResistant() && chestplateCheck.getType() == Material.ELYTRA;
+                return chestplateCheck != null && chestplateCheck.getItemMeta().isFireResistant() && chestplateCheck.getType() == Material.ELYTRA &&
+                        player.isConnected();
             });
         }else if (!isWearingFireResistantElytra && (previousState == null || previousState)){
             playerElytraState.remove(player);
@@ -416,7 +430,7 @@ public class PlayerListener implements Listener{
             }
             Entity damager = e.getDamageSource().getCausingEntity();
             if (!(damager instanceof Monster || damager instanceof Phantom || damager instanceof Slime)) {
-                player.sendActionBar(Miscellaneous.translateColor("&cyou can't jump!"));
+                player.sendActionBar(Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("jump_disabled")));
                 new BukkitRunnable() {
                     @Override
                     public void run() {
@@ -447,9 +461,9 @@ public class PlayerListener implements Listener{
                 }.runTaskTimer(permadeath,0,1);
             }else if (damager instanceof Wolf){
                 if (playersWithRabies.get(player) == null){
-                    playersWithRabies.put(player,10);
-                    player.sendMessage(Miscellaneous.translateColor(permadeath.prefix+"&cyou have been infected with rabies, drink a milk bucket within the next 20 minutes " +
-                            "or you'll die. Disconnecting will also kill you"));
+                    playersWithRabies.put(player,permadeath.getMainConfigManager().getRabiesSeconds());
+                    player.sendMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("rabies_infected"),
+                            permadeath.getMainConfigManager().getRabiesSeconds()));
                     Bukkit.getScheduler().runTaskLater(permadeath, () -> {
                         if (playersWithRabies.get(player) != null){
                             player.clearActivePotionEffects(); //just in case they have resistance 5 or sum
@@ -461,11 +475,11 @@ public class PlayerListener implements Listener{
                         @Override
                         public void run() {
                             if (playersWithRabies.get(player) == null){
-                                player.sendActionBar(Miscellaneous.translateColor("&ayou have been cured!"));
+                                player.sendActionBar(Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("rabies_cured")));
                                 cancel();
                                 return;
                             }
-                            player.sendActionBar(Miscellaneous.translateColor("&7Find a cure before: %02d:%02d:%02d",
+                            player.sendActionBar(Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("rabies_timer"),
                                     playersWithRabies.get(player)/3600,(playersWithRabies.get(player)%3600)/60,playersWithRabies.get(player)%60));
                             playersWithRabies.put(player, playersWithRabies.getOrDefault(player,-1)-1);
                         }
