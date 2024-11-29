@@ -103,8 +103,8 @@ public class EntityListener implements Listener {
             }
         }else if (entity instanceof Phantom phantom && day > 19){
             phantom.setSize(9);
-            phantom.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(phantom.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue() * 2);
-            phantom.setHealth(phantom.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue());
+            phantom.getAttribute(Attribute.MAX_HEALTH).setBaseValue(phantom.getAttribute(Attribute.MAX_HEALTH).getBaseValue() * 2);
+            phantom.setHealth(phantom.getAttribute(Attribute.MAX_HEALTH).getBaseValue());
         }else if (entity instanceof MagmaCube magmaCube){
             if (day > 20) {
                 magmaCube.setSize(16);
@@ -112,8 +112,8 @@ public class EntityListener implements Listener {
         }else if (entity instanceof Slime slime){
             if (day > 20) {
                 slime.setSize(15);
-                slime.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(slime.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue() * 2);
-                slime.setHealth(slime.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue());
+                slime.getAttribute(Attribute.MAX_HEALTH).setBaseValue(slime.getAttribute(Attribute.MAX_HEALTH).getBaseValue() * 2);
+                slime.setHealth(slime.getAttribute(Attribute.MAX_HEALTH).getBaseValue());
             }
         }else if (entity instanceof Ravager ravager){
             if (day > 20) {
@@ -126,8 +126,8 @@ public class EntityListener implements Listener {
             }else{
                 baseHealth = random.nextInt(40,61);
             }
-            ghast.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(baseHealth);
-            ghast.setHealth(ghast.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue());
+            ghast.getAttribute(Attribute.MAX_HEALTH).setBaseValue(baseHealth);
+            ghast.setHealth(ghast.getAttribute(Attribute.MAX_HEALTH).getBaseValue());
         }else if (entity instanceof Squid squid){
             if (day > 29) {
                 AtomicBoolean spawn = new AtomicBoolean(true);
@@ -256,7 +256,7 @@ public class EntityListener implements Listener {
         }else if (entity instanceof Zombie zombie){
             if (day > 29){
                 if (!zombie.isAdult()) {
-                    zombie.getAttribute(Attribute.GENERIC_SCALE).setBaseValue(zombie.getAttribute(Attribute.GENERIC_SCALE).getValue() / 2);
+                    zombie.getAttribute(Attribute.SCALE).setBaseValue(zombie.getAttribute(Attribute.SCALE).getValue() / 2);
                 }else{
                     switch (random.nextInt(1,5)){
                         case 1:
@@ -275,7 +275,7 @@ public class EntityListener implements Listener {
                 }
             }
         }else if (entity instanceof Wither wither){
-            wither.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(400); //base is 300
+            wither.getAttribute(Attribute.MAX_HEALTH).setBaseValue(400); //base is 300
             // wither.setHealth(400); //wither heals itself
         }
 
@@ -388,7 +388,7 @@ public class EntityListener implements Listener {
             List<Player> nearbyPlayers = mob.getLocation().getNearbyPlayers(25,pred -> {
                 EntityEquipment armor = pred.getEquipment();
                 return ((pred.getGameMode() == GameMode.SURVIVAL || pred.getGameMode() == GameMode.ADVENTURE) &&
-                        (!pred.hasPotionEffect(PotionEffectType.INVISIBILITY) ||
+                        (!pred.isInvisible() ||
                          (armor.getHelmet() != null || armor.getChestplate() != null ||
                                 armor.getLeggings() != null || armor.getBoots() != null)));
             }).stream().toList();
@@ -403,7 +403,7 @@ public class EntityListener implements Listener {
             if (mob instanceof Monster){
                 if (mob instanceof Creeper && permadeath.getMainConfigManager().getDay() > 29){
                     double distanceBetween = mob.getLocation().distance(player.getLocation());
-                    mob.getAttribute(Attribute.GENERIC_SCALE).setBaseValue(
+                    mob.getAttribute(Attribute.SCALE).setBaseValue(
                             distanceBetween < 20 ? Math.max(distanceBetween / 20, 0.3) : 1.0
                     );
                 }
@@ -453,7 +453,7 @@ public class EntityListener implements Listener {
             if (dragon.getBossBar() == null){
                 return;
             }
-            if (dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()/dragon.getHealth() >= 2){
+            if (dragon.getAttribute(Attribute.MAX_HEALTH).getValue()/dragon.getHealth() >= 2){
                 dragon.getBossBar().setColor(BarColor.RED);
                 dragon.customName(Component.text(Miscellaneous.translateColor("&c&lENRAGED PERMADEATH DEMON")));
                 this.isEnderDragonEnraged = true;
@@ -518,7 +518,7 @@ public class EntityListener implements Listener {
                     dragon.getWorld().spawn(location, EntityType.END_CRYSTAL.getEntityClass());
                 }
                 enderCrystalLocations.clear();
-            }else if (random.nextFloat() <= 0.2 && dragon.getHealth() < dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()*0.7){
+            }else if (random.nextFloat() <= 0.2 && dragon.getHealth() < dragon.getAttribute(Attribute.MAX_HEALTH).getValue()*0.7){
                 BukkitScheduler scheduler = Bukkit.getScheduler();
                 ArrayList<Entity> entities = new ArrayList<>();
                 for (int i = 0; i < 50; i++){
@@ -532,12 +532,12 @@ public class EntityListener implements Listener {
                         });
                         entities.add(stand);
                     scheduler.runTaskLater(permadeath, () -> {
-                        if (!dragon.isDead() && dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue() > dragon.getHealth()+1){
+                        if (!dragon.isDead() && dragon.getAttribute(Attribute.MAX_HEALTH).getValue() > dragon.getHealth()+1){
                             dragon.setHealth(dragon.getHealth()+1);
                             if (dragon.getBossBar() == null){
                                 return;
                             }
-                            if (dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()/dragon.getHealth() >= 2){
+                            if (dragon.getAttribute(Attribute.MAX_HEALTH).getValue()/dragon.getHealth() >= 2){
                                 dragon.getBossBar().setColor(BarColor.RED);
                                 dragon.customName(Component.text(Miscellaneous.translateColor("&c&lENRAGED PERMADEATH DEMON")));
                                 this.isEnderDragonEnraged = true;
@@ -671,7 +671,7 @@ public class EntityListener implements Listener {
     @EventHandler
     public void onHealthRegain(EntityRegainHealthEvent e){
         if (e.getEntity() instanceof EnderDragon dragon && dragon.getBossBar() != null){
-            if (dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()/dragon.getHealth() >= 2){
+            if (dragon.getAttribute(Attribute.MAX_HEALTH).getValue()/dragon.getHealth() >= 2){
                 dragon.getBossBar().setColor(BarColor.RED);
                 dragon.customName(Component.text(Miscellaneous.translateColor("&c&lENRAGED PERMADEATH DEMON")));
                 this.isEnderDragonEnraged = true;

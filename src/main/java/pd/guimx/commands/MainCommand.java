@@ -35,7 +35,7 @@ public class MainCommand implements CommandExecutor {
         } else if ("version".equalsIgnoreCase(args[0])) {
             sender.sendMessage(Miscellaneous.translateColor(permadeath.prefix + "currently in version " + permadeath.version));
         } else if ("setday".equalsIgnoreCase(args[0]) || "tpworld".equalsIgnoreCase(args[0]) ||
-                "setlifes".equalsIgnoreCase(args[0]) || "test".equalsIgnoreCase(args[0])) {
+                "setlifes".equalsIgnoreCase(args[0]) || "test".equalsIgnoreCase(args[0]) || "deathtrain".equalsIgnoreCase(args[0])){
             subCommandHandler(sender, args[0], args);
         } else if ("reload".equalsIgnoreCase(args[0])) {
             if (!sender.hasPermission("pd.reload")) {
@@ -155,19 +155,19 @@ public class MainCommand implements CommandExecutor {
                     }
                     Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),"tick freeze");
                     Bukkit.getOnlinePlayers().forEach(p -> {
-                        double speed = p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).getValue();
-                        double jumpSrength = p.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).getValue();
-                        double entityReach = p.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE).getValue();
-                        double blockReach = p.getAttribute(Attribute.PLAYER_BLOCK_INTERACTION_RANGE).getValue();
-                        p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0);
-                        p.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).setBaseValue(0);
-                        p.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE).setBaseValue(0);
-                        p.getAttribute(Attribute.PLAYER_BLOCK_INTERACTION_RANGE).setBaseValue(0);
+                        double speed = p.getAttribute(Attribute.MOVEMENT_SPEED).getValue();
+                        double jumpSrength = p.getAttribute(Attribute.JUMP_STRENGTH).getValue();
+                        double entityReach = p.getAttribute(Attribute.ENTITY_INTERACTION_RANGE).getValue();
+                        double blockReach = p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).getValue();
+                        p.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0);
+                        p.getAttribute(Attribute.JUMP_STRENGTH).setBaseValue(0);
+                        p.getAttribute(Attribute.ENTITY_INTERACTION_RANGE).setBaseValue(0);
+                        p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).setBaseValue(0);
                         Bukkit.getScheduler().runTaskLater(permadeath, () -> {
-                            p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(speed);
-                            p.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).setBaseValue(jumpSrength);
-                            p.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE).setBaseValue(entityReach);
-                            p.getAttribute(Attribute.PLAYER_BLOCK_INTERACTION_RANGE).setBaseValue(blockReach);
+                            p.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(speed);
+                            p.getAttribute(Attribute.JUMP_STRENGTH).setBaseValue(jumpSrength);
+                            p.getAttribute(Attribute.ENTITY_INTERACTION_RANGE).setBaseValue(entityReach);
+                            p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).setBaseValue(blockReach);
                         },Long.parseLong(args[2])*20);
                     });
                     Bukkit.getScheduler().runTaskLater(permadeath, () -> Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),"tick unfreeze"),
@@ -215,6 +215,18 @@ public class MainCommand implements CommandExecutor {
                     Inventory inv = Bukkit.createInventory(null,9,"ola");
                     player.openInventory(inv);
                     break;
+            }
+        }else if ("deathtrain".equalsIgnoreCase(command)){
+            if (!sender.hasPermission("pd.deathtrain")){
+                sender.sendMessage(Miscellaneous.translateColor("&cYou need &7pd.deathtrain &cpermissions to run this command"));
+                return;
+            }
+            if (args.length != 2){
+                sender.sendMessage(Miscellaneous.translateColor(permadeath.prefix+"&cusage: /permadeath deathtrain <seconds>"));
+            }else if (permadeath.getPlayerListener().isDeathTrain()){
+                permadeath.getPlayerListener().setDeathTrainSecondsRemaining(Integer.parseInt(args[1]));
+            }else{
+                sender.sendMessage(Miscellaneous.translateColor(permadeath.prefix+"&cDeathTrain is not curently active"));
             }
         }
     }

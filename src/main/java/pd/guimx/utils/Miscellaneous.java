@@ -15,7 +15,6 @@ import pd.guimx.Permadeath;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class Miscellaneous {
@@ -113,6 +112,11 @@ public class Miscellaneous {
         }
     }
 
+    /**
+     *
+     * @deprecated use {@link #orbitEntitiesAroundEntity(Permadeath, Entity, ArrayList, Supplier)}
+     */
+    @Deprecated
     public static void orbitEntitiesFollowEntity(Permadeath plugin, Entity entity, EntityType entityType, int amount, double scaleMultiplier, Supplier<Boolean> check){
         ArrayList<Entity> entities = new ArrayList<>();
         for (int i = 0; i < amount; i++){
@@ -123,7 +127,7 @@ public class Miscellaneous {
                     livingEntity.setInvulnerable(true);
                     livingEntity.setGravity(false);
                     livingEntity.setSilent(true);
-                    livingEntity.getAttribute(Attribute.GENERIC_SCALE).setBaseValue(livingEntity.getAttribute(Attribute.GENERIC_SCALE).getValue() * scaleMultiplier);
+                    livingEntity.getAttribute(Attribute.SCALE).setBaseValue(livingEntity.getAttribute(Attribute.SCALE).getValue() * scaleMultiplier);
                     if (spawnedEntity instanceof ArmorStand armorStand){
                         armorStand.setGravity(true);
                         armorStand.setInvisible(true);
@@ -155,6 +159,30 @@ public class Miscellaneous {
                             0,
                             Math.sin(angle)*(entity.getWidth()/2)).subtract(entities.get(finalI).getLocation().add(0,-1.9,0).toVector().subtract(entity.getLocation().toVector()));
                     entities.get(finalI).setVelocity(orbitVector);
+                }
+            };
+            runnable.runTaskTimer(plugin,0,1);
+        }
+    }
+
+    public static void orbitEntitiesAroundEntity(Permadeath plugin, Entity entityToFollow, ArrayList<LivingEntity> entitiesToRotate, Supplier<Boolean> check){
+        for (LivingEntity entity : entitiesToRotate){
+            final double angleOffset = entitiesToRotate.indexOf(entity) * (2 * Math.PI / entitiesToRotate.size());
+            BukkitRunnable runnable = new BukkitRunnable() {
+                double angle = angleOffset;
+                @Override
+                public void run() {
+                    if (!check.get()){
+                        entity.remove();
+                        cancel();
+                        return;
+                    }
+                    angle += 0.05;
+                    Vector orbitVector = new Vector(
+                            Math.cos(angle)*(entityToFollow.getWidth()/2),
+                            0,
+                            Math.sin(angle)*(entityToFollow.getWidth()/2)).subtract(entity.getLocation().add(0,-1.9,0).toVector().subtract(entityToFollow.getLocation().toVector()));
+                    entity.setVelocity(orbitVector);
                 }
             };
             runnable.runTaskTimer(plugin,0,1);

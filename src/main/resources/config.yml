@@ -4,7 +4,8 @@ config:
   death_train_seconds: 3600
   discord_webhooks: []
   starting_lives: 3
-  rabies_seconds: 20
+  rabies_seconds: 72000 # 20 minutes
+  grace_period: 300 # 5 minutes, seconds on which players won't take damage after dying
 messages:
   prefix: "&8[&4&lPermadeath&r&8]&r "
   player_banned: "&c&lPERMADEATH!&r\nYou have died and are no longer allowed to join back" #f*ck no im not making it a list
@@ -23,9 +24,12 @@ messages:
   upgrade_netherite_failed: "&cYou can't do that!"
   totem_failed: "&cHow unfortunate. %s's totem did not work. Oh well, too bad"
   totem_worked: "&7%s activated a Totem of Undying. Luckily, they have survived. (%d > %d)"
+  jesus_totem: "&dThis totem has a 100%% chance of working"
+  jesus_totem_used: "&7%s activated a Jesus Totem of Undying (100% chance of working)"
   bed_anchor_disabled_end: "&cThis is disabled in The End"
   discord_webhook_died: "%s HAS DIED!"
   discord_webhook_totem: "%s popped a Totem!"
+  discord_webhook_jesus_totem: "%s popped a Jesus Totem!"
   motd_before_day_30: "You won't last longer than 30 seconds... wait"
   motd_day_30: "                 &c&l&kii &4&lWELCOME TO HELL &c&l&kii"
   dragon_heal: "&cDemon is healing itself!"
@@ -35,3 +39,4 @@ messages:
   rabies_cured: "&aYou have been cured!"
   extra_heart_gained: "&aYou've gained 1 extra heart"
   extra_heart_limit_reached: "&cYou've exceeded the amount of times you can consume this"
+  grace_period_removed: "&cYour grace period has been removed. Be careful"

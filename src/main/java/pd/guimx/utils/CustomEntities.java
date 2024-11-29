@@ -34,8 +34,8 @@ public class CustomEntities {
             ItemStack bow = new ItemStack(Material.BOW);
             bow.addUnsafeEnchantment(Enchantment.PUNCH,20);
             skelly.getEquipment().setItemInMainHand(bow);
-            skelly.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(skelly.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue() * 2);
-            skelly.setHealth(skelly.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue());
+            skelly.getAttribute(Attribute.MAX_HEALTH).setBaseValue(skelly.getAttribute(Attribute.MAX_HEALTH).getBaseValue() * 2);
+            skelly.setHealth(skelly.getAttribute(Attribute.MAX_HEALTH).getBaseValue());
             skelly.getEquipment().setItemInMainHandDropChance(0);
         });
         return rider;
@@ -64,8 +64,8 @@ public class CustomEntities {
             ItemStack crossbow = new ItemStack(Material.CROSSBOW);
             crossbow.addUnsafeEnchantment(Enchantment.SHARPNESS,20);
             skelly.getEquipment().setItemInMainHand(crossbow);
-            skelly.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(skelly.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue() * 2);
-            skelly.setHealth(skelly.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue());
+            skelly.getAttribute(Attribute.MAX_HEALTH).setBaseValue(skelly.getAttribute(Attribute.MAX_HEALTH).getBaseValue() * 2);
+            skelly.setHealth(skelly.getAttribute(Attribute.MAX_HEALTH).getBaseValue());
             skelly.getEquipment().setItemInMainHandDropChance(0);
         });
         return rider;
@@ -80,8 +80,8 @@ public class CustomEntities {
             ItemStack crossbow = new ItemStack(Material.BOW);
             crossbow.addUnsafeEnchantment(Enchantment.PUNCH,10);
             skelly.getEquipment().setItemInMainHand(crossbow);
-            skelly.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(skelly.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue() * 2);
-            skelly.setHealth(skelly.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue());
+            skelly.getAttribute(Attribute.MAX_HEALTH).setBaseValue(skelly.getAttribute(Attribute.MAX_HEALTH).getBaseValue() * 2);
+            skelly.setHealth(skelly.getAttribute(Attribute.MAX_HEALTH).getBaseValue());
             skelly.getEquipment().setItemInMainHandDropChance(0);
         });
         return rider;
@@ -218,15 +218,15 @@ public class CustomEntities {
     }
 
     public static void setZombieInGoat(Zombie zombie){
-        zombie.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(30);
-        zombie.setHealth(zombie.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue());
+        zombie.getAttribute(Attribute.MAX_HEALTH).setBaseValue(30);
+        zombie.setHealth(zombie.getAttribute(Attribute.MAX_HEALTH).getBaseValue());
         zombie.getWorld().spawn(zombie.getLocation(), EntityType.GOAT.getEntityClass(), spawnedEntity -> {
            spawnedEntity.addPassenger(zombie);
         });
     }
     public static void setZombieInCreeper(Zombie zombie){
-        zombie.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(30);
-        zombie.setHealth(zombie.getAttribute(Attribute.GENERIC_MAX_HEALTH).getBaseValue());
+        zombie.getAttribute(Attribute.MAX_HEALTH).setBaseValue(30);
+        zombie.setHealth(zombie.getAttribute(Attribute.MAX_HEALTH).getBaseValue());
         zombie.getWorld().spawn(zombie.getLocation(), EntityType.CREEPER.getEntityClass(), spawnedEntity -> {
            spawnedEntity.addPassenger(zombie);
         });

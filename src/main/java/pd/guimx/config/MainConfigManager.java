@@ -18,6 +18,7 @@ public class MainConfigManager {
     private List<String> discordWebhooks;
     private int startingLives;
     private int rabiesSeconds;
+    private int gracePeriod;
 
     public MainConfigManager(Permadeath permadeath){
         this.permadeath = permadeath;
@@ -32,6 +33,7 @@ public class MainConfigManager {
         this.minPlayersSleep = config.getInt("config.minimum_players_sleep_needed");
         this.deathTrainSeconds = config.getInt("config.death_train_seconds");
         this.rabiesSeconds = config.getInt("config.rabies_seconds");
+        gracePeriod = config.getInt("config.grace_period");
         messages.put("prefix",config.getString("messages.prefix"));
         messages.put("player_banned",config.getString("messages.player_banned"));
         messages.put("player_joined",config.getString("messages.player_joined"));
@@ -62,6 +64,10 @@ public class MainConfigManager {
         messages.put("rabies_cured",config.getString("messages.rabies_cured"));
         messages.put("extra_heart_gained",config.getString("messages.extra_heart_gained"));
         messages.put("extra_heart_limit_reached",config.getString("messages.extra_heart_limit_reached"));
+        messages.put("jesus_totem",config.getString("messages.jesus_totem"));
+        messages.put("jesus_totem_used",config.getString("messages.jesus_totem_used"));
+        messages.put("discord_webhook_jesus_totem",config.getString("messages.discord_webhook_jesus_totem"));
+        messages.put("grace_period_removed",config.getString("messages.grace_period_removed"));
         Bukkit.setMotd(Miscellaneous.translateColor(messages.get("motd")));
     }
 
@@ -79,6 +85,11 @@ public class MainConfigManager {
     public int getDay() {
         return hour/24;
     }
+
+    public int getGracePeriod() {
+        return gracePeriod;
+    }
+
     public int getHour() {return hour;}
     public int getMinPlayersSleep() {
         return minPlayersSleep;

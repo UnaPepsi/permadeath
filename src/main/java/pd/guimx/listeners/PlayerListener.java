@@ -1,13 +1,17 @@
 package pd.guimx.listeners;
 
-import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.Equippable;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
+import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
+import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.Skull;
@@ -27,10 +31,12 @@ import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.inventory.SmithItemEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent.Status;
-import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.SmithingInventory;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.RayTraceResult;
@@ -55,6 +61,7 @@ public class PlayerListener implements Listener{
     private int[] deathTrainSecondsRemaining = {-1};
     private final HashMap<Player, Boolean> playerElytraState = new HashMap<>();
     private HashMap<Player,Integer> playersWithRabies = new HashMap<>(); // LMFAO its a funny idea ok? 😭
+    private HashMap<Player,Long> playersWithProtection = new HashMap<>();
     public PlayerListener(Permadeath permadeath){
         this.permadeath = permadeath;
     }
@@ -62,6 +69,15 @@ public class PlayerListener implements Listener{
     public boolean isDeathTrain(){
         return isDeathTrain;
     }
+
+    public int getDeathTrainSecondsRemaining() {
+        return deathTrainSecondsRemaining[0];
+    }
+
+    public void setDeathTrainSecondsRemaining(int deathTrainSecondsRemaining) {
+        this.deathTrainSecondsRemaining[0] = deathTrainSecondsRemaining;
+    }
+
     @EventHandler
     public void onPreJoin(AsyncPlayerPreLoginEvent e){
         if (permadeath.getDb().userBanned(e.getName())){
@@ -75,15 +91,15 @@ public class PlayerListener implements Listener{
         permadeath.getDb().addUser(player.getName(),permadeath.getMainConfigManager().getStartingLives());
         e.setJoinMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("player_joined"),
                 player.getName(),permadeath.getDb().getLifes(player.getName())));
-        player.setResourcePack("https://fun.guimx.me/r/permadeath2.0.zip?compress=false",
-              HexFormat.of().parseHex("59f268a27bdffb0e4dbee66bfb171c7c4875f803"), Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("texture_pack")),false);
+        player.setResourcePack("https://fun.guimx.me/r/permadeath2.1.zip?compress=false",
+              HexFormat.of().parseHex("ae8a33eb6d3be0f39385306c1e79fe62a6b9e7fc"), Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("texture_pack")),false);
         player.sendMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("current_day"),
                 permadeath.getMainConfigManager().getDay()));
-        player.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).setBaseValue(
-                player.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).getDefaultValue()
+        player.getAttribute(Attribute.JUMP_STRENGTH).setBaseValue(
+                player.getAttribute(Attribute.JUMP_STRENGTH).getDefaultValue()
         );
-        player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.10000000149011612);
-        player.getAttribute(Attribute.GENERIC_SCALE).setBaseValue(1);
+        player.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.10000000149011612);
+        player.getAttribute(Attribute.SCALE).setBaseValue(1);
     }
 
     @EventHandler
@@ -151,6 +167,40 @@ public class PlayerListener implements Listener{
             }else{
                 player.sendMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("remaining_lifes"),
                         newLifes-1));
+                int gracePeriod = permadeath.getMainConfigManager().getGracePeriod();
+                long currentMili = System.currentTimeMillis();
+                playersWithProtection.put(player,currentMili);
+                player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION,20*gracePeriod, 1,true));
+                player.setGlowing(true);
+                player.setInvisible(true);
+                ArrayList<LivingEntity> armorStands = new ArrayList<>();
+                ItemStack jesusCross = new ItemStack(Material.CLOCK);
+                ItemMeta jesusCrossMeta = jesusCross.getItemMeta();
+                jesusCrossMeta.setItemModel(NamespacedKey.minecraft("jesus_totem"));
+                jesusCross.setItemMeta(jesusCrossMeta);
+                for (int i = 0; i < 20; i++){
+                    armorStands.add(player.getWorld().spawn(player.getLocation().add(0,1,0), ArmorStand.class, spawnedArmorStand ->{
+                        spawnedArmorStand.setNoPhysics(true);
+                        spawnedArmorStand.setCollidable(false);
+                        spawnedArmorStand.setInvulnerable(true);
+                        spawnedArmorStand.setGravity(false);
+                        spawnedArmorStand.setSilent(true);
+                        spawnedArmorStand.getAttribute(Attribute.SCALE).setBaseValue(spawnedArmorStand.getAttribute(Attribute.SCALE).getValue() * 0.2);
+                        spawnedArmorStand.setGravity(true);
+                        spawnedArmorStand.setInvisible(true);
+                        spawnedArmorStand.setNoPhysics(true);
+                        spawnedArmorStand.getEquipment().setHelmet(jesusCross);
+                    }));
+                }
+                Miscellaneous.orbitEntitiesAroundEntity(permadeath,player,armorStands,() -> player.isConnected() && playersWithProtection.containsKey(player));
+                Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                    if (playersWithProtection.containsKey(player) && playersWithProtection.get(player) == currentMili) { //if a player dies multiple times before this fires, this should stop it from firing multiple times
+                        playersWithProtection.remove(player);
+                        player.setGlowing(false);
+                        player.setInvisible(false);
+                        player.sendMessage(Miscellaneous.translateColor(permadeath.prefix + permadeath.getMainConfigManager().getMessages().get("grace_period_removed")));
+                    }
+                },20L*gracePeriod);
             }
         }, 1L);
 
@@ -249,7 +299,33 @@ public class PlayerListener implements Listener{
 
     @EventHandler
     public void onTotem(EntityResurrectEvent e){
-        if (e.isCancelled() || !(e.getEntity() instanceof Player player)){
+        if (e.isCancelled() || !(e.getEntity() instanceof Player player) || e.getHand() == null){
+            return;
+        }
+        if (player.getInventory().getItem(e.getHand()).getItemMeta().getItemModel() != null &&
+                player.getInventory().getItem(e.getHand()).getItemMeta().getItemModel().getKey().equals("jesus_totem") &&
+                player.getInventory().getItem(e.getHand()).getType() == Material.CLOCK){
+            player.playSound(player,"custom:bell",5,1);
+            ItemStack helmet = player.getEquipment().getHelmet();
+            if (helmet != null){ //only nullable to players :)
+                Equippable.Builder equippable = helmet.getData(DataComponentTypes.EQUIPPABLE).toBuilder()
+                        .cameraOverlay(Key.key(NamespacedKey.minecraft("jesus_overlay"),"overlay/jesus2"));
+                helmet.setData(DataComponentTypes.EQUIPPABLE,equippable);
+                Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                   equippable.cameraOverlay(null);
+                    helmet.setData(DataComponentTypes.EQUIPPABLE,equippable);
+                },30);
+                AdvancementProgress progress = player.getAdvancementProgress(Bukkit.getAdvancement(NamespacedKey.minecraft("adventure/totem_of_undying")));
+                for (String criteria : progress.getRemainingCriteria()){
+                    progress.awardCriteria(criteria);
+                }
+            }
+            for (String webhook : permadeath.getMainConfigManager().getDiscordWebhooks()) {
+                String totemWorked = String.format(permadeath.getMainConfigManager().getMessages().get("jesus_totem_used"), e.getEntity().getName());
+                Webhook.sendMessage(webhook, String.format(permadeath.getMainConfigManager().getMessages().get("discord_webhook_totem"),player.getName()),
+                        totemWorked.replaceAll("&.",""), player.getName(),
+                        permadeath.getMainConfigManager().getDay(), false);
+            }
             return;
         }
         int day = permadeath.getMainConfigManager().getDay();
@@ -293,6 +369,10 @@ public class PlayerListener implements Listener{
             player.setRemainingAir(player.getRemainingAir() >= 0 ? (int) (player.getRemainingAir() * 0.75) : player.getRemainingAir());
         }
         if (permadeath.getMainConfigManager().getDay() > 29){
+            EntityEquipment equipment = player.getEquipment();
+            if (equipment.getHelmet() != null){
+                return;
+            }
             RayTraceResult result = player.getWorld().rayTraceBlocks(player.getLocation(),new Vector(0,385-player.getY(),0),385);
             if ((result == null || result.getHitBlock() == null) && !player.getWorld().isClearWeather() && isDeathTrain && random.nextFloat() < 0.05){
                 player.damage(0.05);
@@ -324,7 +404,7 @@ public class PlayerListener implements Listener{
                 return;
             }
             if (!"&6&lPERMADEATH DEMON".equalsIgnoreCase(dragon.getBossBar().getTitle())){
-                if (dragon.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()/dragon.getHealth() < 2){
+                if (dragon.getAttribute(Attribute.MAX_HEALTH).getValue()/dragon.getHealth() < 2){
                     dragon.getBossBar().setColor(BarColor.BLUE);
                 }
                 dragon.customName(Component.text(Miscellaneous.translateColor("&6&lPERMADEATH DEMON")));
@@ -346,13 +426,13 @@ public class PlayerListener implements Listener{
     public void onEat(PlayerItemConsumeEvent e){
         ItemStack item = e.getItem();
         Player player = e.getPlayer();
-        double maxHealth = player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
-        if (item.getItemMeta().hasCustomModelData() && item.getItemMeta().getCustomModelData() == 69 &&
+        double maxHealth = player.getAttribute(Attribute.MAX_HEALTH).getValue();
+        if (item.getItemMeta().getItemModel() != null && item.getItemMeta().getItemModel().getKey().equals("heart") &&
             item.getType() == Material.CLOCK &&
-            item.getItemMeta().getFood().getEatSeconds() == 5
+            item.getItemMeta().getFood().getNutrition() == 0
         ){
             if (maxHealth < 24) {
-                player.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(maxHealth + 2);
+                player.getAttribute(Attribute.MAX_HEALTH).setBaseValue(maxHealth + 2);
                 player.sendMessage(Miscellaneous.translateColor(permadeath.prefix + permadeath.getMainConfigManager().getMessages().get("extra_heart_gained")));
             }else{
                 player.sendMessage(Miscellaneous.translateColor(permadeath.prefix + permadeath.getMainConfigManager().getMessages().get("extra_heart_limit_reached")));
@@ -374,18 +454,33 @@ public class PlayerListener implements Listener{
         //chestplate.getItemMeta().getAttributeModifiers().containsKey("fire_resistant")
         if (isWearingFireResistantElytra && (previousState == null || !previousState)){
             playerElytraState.put(player,true);
-            player.getAttribute(Attribute.GENERIC_GRAVITY).setBaseValue(0.04);
-            player.getAttribute(Attribute.GENERIC_SAFE_FALL_DISTANCE).setBaseValue(Integer.MAX_VALUE);
-            player.getAttribute(Attribute.GENERIC_SAFE_FALL_DISTANCE).setBaseValue(Integer.MAX_VALUE);
-            Miscellaneous.orbitEntitiesFollowEntity(permadeath,player, EntityType.ARMOR_STAND,16,0.2,() -> {
+            player.getAttribute(Attribute.GRAVITY).setBaseValue(0.04);
+            player.getAttribute(Attribute.SAFE_FALL_DISTANCE).setBaseValue(Integer.MAX_VALUE);
+            player.getAttribute(Attribute.SAFE_FALL_DISTANCE).setBaseValue(Integer.MAX_VALUE);
+            ArrayList<LivingEntity> armorStands = new ArrayList<>();
+            for (int i = 0; i < 20; i++){
+                armorStands.add(player.getWorld().spawn(player.getLocation().add(0,1,0), ArmorStand.class, spawnedArmorStand ->{
+                    spawnedArmorStand.setNoPhysics(true);
+                    spawnedArmorStand.setCollidable(false);
+                    spawnedArmorStand.setInvulnerable(true);
+                    spawnedArmorStand.setGravity(false);
+                    spawnedArmorStand.setSilent(true);
+                    spawnedArmorStand.getAttribute(Attribute.SCALE).setBaseValue(spawnedArmorStand.getAttribute(Attribute.SCALE).getValue() * 0.2);
+                    spawnedArmorStand.setGravity(true);
+                    spawnedArmorStand.setInvisible(true);
+                    spawnedArmorStand.setNoPhysics(true);
+                    spawnedArmorStand.setItemInHand(new ItemStack(Material.GOLD_BLOCK));
+                }));
+            }
+            Miscellaneous.orbitEntitiesAroundEntity(permadeath,player,armorStands,() -> {
                 ItemStack chestplateCheck = player.getEquipment().getChestplate();
                 return chestplateCheck != null && chestplateCheck.getItemMeta().isFireResistant() && chestplateCheck.getType() == Material.ELYTRA &&
                         player.isConnected();
             });
         }else if (!isWearingFireResistantElytra && (previousState == null || previousState)){
             playerElytraState.remove(player);
-            player.getAttribute(Attribute.GENERIC_GRAVITY).setBaseValue(0.08);
-            player.getAttribute(Attribute.GENERIC_SAFE_FALL_DISTANCE).setBaseValue(3.0);
+            player.getAttribute(Attribute.GRAVITY).setBaseValue(0.08);
+            player.getAttribute(Attribute.SAFE_FALL_DISTANCE).setBaseValue(3.0);
         }
     }
 
@@ -395,11 +490,11 @@ public class PlayerListener implements Listener{
         ItemStack[] items = e.getInventory().getMatrix();
         if (items.length < 9) {return;}
         for (int i = 0; i < 3; i++){
-            if (items[i].getType() != Material.FEATHER || items[8-i].getType() != Material.FEATHER){
+            if (items[i] == null || items[i].getType() != Material.FEATHER || items[8-i] == null || items[8-i].getType() != Material.FEATHER){
                 return;
             }
         }
-        if (items[3].getType() != Material.FEATHER || items[5].getType() != Material.FEATHER || items[4].getType() != Material.ELYTRA){
+        if (items[3] == null || items[3].getType() != Material.FEATHER || items[5] == null || items[5].getType() != Material.FEATHER || items[4] == null || items[4].getType() != Material.ELYTRA){
             return;
         }
         ItemMeta resultMeta = items[4].getItemMeta();
@@ -424,6 +519,13 @@ public class PlayerListener implements Listener{
 
     @EventHandler
     public void onDamageByEntity(EntityDamageByEntityEvent e){
+        if (e.getDamageSource().getCausingEntity() instanceof Player player && playersWithProtection.containsKey(player)){
+            playersWithProtection.remove(player);
+            player.removePotionEffect(PotionEffectType.NIGHT_VISION);
+            player.setGlowing(false);
+            player.setInvisible(false);
+            player.sendMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("grace_period_removed")));
+        }
         if (permadeath.getMainConfigManager().getDay() > 20 && e.getEntity() instanceof Player player) {
             if (player.getWorld().isUltraWarm()){
                 player.setFireTicks(20*10);
@@ -434,10 +536,10 @@ public class PlayerListener implements Listener{
                 new BukkitRunnable() {
                     @Override
                     public void run() {
-                        player.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).setBaseValue(0);
+                        player.getAttribute(Attribute.JUMP_STRENGTH).setBaseValue(0);
                         Bukkit.getScheduler().runTaskLater(permadeath, () -> {
-                            player.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).setBaseValue(
-                                    player.getAttribute(Attribute.GENERIC_JUMP_STRENGTH).getDefaultValue()
+                            player.getAttribute(Attribute.JUMP_STRENGTH).setBaseValue(
+                                    player.getAttribute(Attribute.JUMP_STRENGTH).getDefaultValue()
                             );
                             cancel();
                         }, 2 * 20);
@@ -450,11 +552,11 @@ public class PlayerListener implements Listener{
                 new BukkitRunnable(){
                     @Override
                     public void run() {
-                        player.getAttribute(Attribute.GENERIC_SCALE).setBaseValue(0.2);
-                        player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.05);
+                        player.getAttribute(Attribute.SCALE).setBaseValue(0.2);
+                        player.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.05);
                         Bukkit.getScheduler().runTaskLater(permadeath,() -> {
-                            player.getAttribute(Attribute.GENERIC_SCALE).setBaseValue(1);
-                            player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.10000000149011612);
+                            player.getAttribute(Attribute.SCALE).setBaseValue(1);
+                            player.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.10000000149011612);
                             cancel();
                         },5*20);
                     }
@@ -490,7 +592,14 @@ public class PlayerListener implements Listener{
     }
     @EventHandler
     public void onAnyDamage(EntityDamageEvent e){
-        if (e.getEntity() instanceof Player && e.getCause() == EntityDamageEvent.DamageCause.DROWNING && permadeath.getMainConfigManager().getDay() > 19){
+        if (!(e.getEntity() instanceof Player player)){
+            return;
+        }
+        if (playersWithProtection.containsKey(player)){
+            e.setCancelled(true);
+            return;
+        }
+        if (e.getCause() == EntityDamageEvent.DamageCause.DROWNING && permadeath.getMainConfigManager().getDay() > 19){
             e.setDamage(e.getDamage()*10);
         }
     }
@@ -501,4 +610,15 @@ public class PlayerListener implements Listener{
             playersWithRabies.remove(e.getPlayer());
         }
     }
+
+    //Doesn't handle projectiles :(
+    //@EventHandler
+    //public void onPlayerAttack(PrePlayerAttackEntityEvent e){
+    //    Player player = e.getPlayer();
+    //    if (playersWithProtection.containsKey(player)) {
+    //        playersWithProtection.remove(player);
+    //        player.removePotionEffect(PotionEffectType.NIGHT_VISION);
+    //        player.sendMessage(Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("grace_period_removed")));
+    //    }
+    //}
 }

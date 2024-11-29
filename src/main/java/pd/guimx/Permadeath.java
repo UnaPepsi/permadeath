@@ -2,17 +2,22 @@ package pd.guimx;
 
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.Consumable;
+import io.papermc.paper.datacomponent.item.DeathProtection;
+import io.papermc.paper.datacomponent.item.FoodProperties;
+import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
+import net.kyori.adventure.key.Key;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemRarity;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.components.FoodComponent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import pd.guimx.commands.MainCommand;
 import pd.guimx.config.MainConfigManager;
 import pd.guimx.listeners.EntityListener;
@@ -22,6 +27,7 @@ import pd.guimx.utils.Miscellaneous;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Permadeath extends JavaPlugin {
 
@@ -114,14 +120,17 @@ public class Permadeath extends JavaPlugin {
         heartMeta.setDisplayName(Miscellaneous.translateColor("&cHeart"));
         heartMeta.setRarity(ItemRarity.EPIC);
         heartMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-        heartMeta.setCustomModelData(69);
-        FoodComponent food = heartMeta.getFood();
-        food.setCanAlwaysEat(true);
-        food.setEatSeconds(5);
-        food.setNutrition(0);
-        food.setSaturation(0);
-        heartMeta.setFood(food);
+        heartMeta.setItemModel(NamespacedKey.minecraft("heart"));
         heartItem.setItemMeta(heartMeta);
+        FoodProperties.Builder food = FoodProperties.food()
+                .canAlwaysEat(true)
+                .nutrition(0)
+                .saturation(0);
+        Consumable.Builder consumable = Consumable.consumable()
+                .consumeSeconds(5)
+                .sound(Key.key("minecraft:block.beacon.activate"));
+        heartItem.setData(DataComponentTypes.FOOD,food);
+        heartItem.setData(DataComponentTypes.CONSUMABLE,consumable);
         heartItem.setLore(new ArrayList<>(){{
             add(Miscellaneous.translateColor("&c+1 ❤"));
         }});
@@ -152,5 +161,29 @@ public class Permadeath extends JavaPlugin {
 
         Bukkit.addRecipe(buffedElytra,true);
          */
+        ItemStack jesusTotemItem = new ItemStack(Material.CLOCK); //not a totem because it could be used to craft yet another totem
+        DeathProtection.Builder jesusTotemDeathProtection = DeathProtection.deathProtection()
+                        .addEffects(List.of(
+                                ConsumeEffect.clearAllStatusEffects(),
+                                ConsumeEffect.applyStatusEffects(List.of(
+                                     new PotionEffect(PotionEffectType.ABSORPTION,20*5,1),
+                                     new PotionEffect(PotionEffectType.REGENERATION,20*45,1),
+                                     new PotionEffect(PotionEffectType.FIRE_RESISTANCE,20*40,0),
+                                     new PotionEffect(PotionEffectType.SPEED,20*10,0) //why not
+                                ),1)));
+        jesusTotemItem.setData(DataComponentTypes.DEATH_PROTECTION,jesusTotemDeathProtection);
+        ItemMeta jesusTotemMeta = jesusTotemItem.getItemMeta();
+        jesusTotemMeta.setMaxStackSize(1);
+        jesusTotemMeta.setDisplayName(Miscellaneous.translateColor("&dJesus Totem"));
+        jesusTotemMeta.setLore(List.of(Miscellaneous.translateColor(getMainConfigManager().getMessages().get("jesus_totem"))));
+        jesusTotemMeta.setItemModel(NamespacedKey.minecraft("jesus_totem"));
+        jesusTotemMeta.setRarity(ItemRarity.EPIC);
+        jesusTotemMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        jesusTotemItem.setItemMeta(jesusTotemMeta);
+        ShapelessRecipe jesusTotem = new ShapelessRecipe(new NamespacedKey(this,"jesus_totem_craft"),jesusTotemItem);
+        jesusTotem.addIngredient(Material.TOTEM_OF_UNDYING);
+        jesusTotem.addIngredient(Material.TOTEM_OF_UNDYING);
+
+        Bukkit.addRecipe(jesusTotem,true);
     }
 }
