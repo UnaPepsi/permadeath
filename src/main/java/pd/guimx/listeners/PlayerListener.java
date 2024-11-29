@@ -507,13 +507,9 @@ public class PlayerListener implements Listener{
 
     @EventHandler
     public void onRightClick(PlayerArmorStandManipulateEvent e){
-        Bukkit.getLogger().info("event");
         ArmorStand stand = e.getRightClicked();
         if (stand.isInvisible() && stand.hasNoPhysics()){
-            Bukkit.getLogger().info("asdjk");
             e.setCancelled(true);
-        }else{
-            Bukkit.getLogger().info(""+stand.isInvisible()+""+stand.hasNoPhysics());
         }
     }
 
