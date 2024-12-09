@@ -25,7 +25,7 @@ messages:
   totem_failed: "&cHow unfortunate. %s's totem did not work. Oh well, too bad"
   totem_worked: "&7%s activated a Totem of Undying. Luckily, they have survived. (%d > %d)"
   jesus_totem: "&dThis totem has a 100%% chance of working"
-  jesus_totem_used: "&7%s activated a Jesus Totem of Undying (100% chance of working)"
+  jesus_totem_used: "&7%s activated a Jesus Totem of Undying (100%% chance of working)"
   bed_anchor_disabled_end: "&cThis is disabled in The End"
   discord_webhook_died: "%s HAS DIED!"
   discord_webhook_totem: "%s popped a Totem!"
