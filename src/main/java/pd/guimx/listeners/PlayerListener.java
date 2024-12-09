@@ -320,10 +320,11 @@ public class PlayerListener implements Listener{
                     progress.awardCriteria(criteria);
                 }
             }
+            Bukkit.broadcastMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("jesus_totem_used")));
             for (String webhook : permadeath.getMainConfigManager().getDiscordWebhooks()) {
-                String totemWorked = String.format(permadeath.getMainConfigManager().getMessages().get("jesus_totem_used"), e.getEntity().getName());
+                String jesusTotem = String.format(permadeath.getMainConfigManager().getMessages().get("discord_webhook_jesus_totem"), e.getEntity().getName());
                 Webhook.sendMessage(webhook, String.format(permadeath.getMainConfigManager().getMessages().get("discord_webhook_totem"),player.getName()),
-                        totemWorked.replaceAll("&.",""), player.getName(),
+                        jesusTotem.replaceAll("&.",""), player.getName(),
                         permadeath.getMainConfigManager().getDay(), false);
             }
             return;
