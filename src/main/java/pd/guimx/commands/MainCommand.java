@@ -215,6 +215,20 @@ public class MainCommand implements CommandExecutor {
                     Inventory inv = Bukkit.createInventory(null,9,"ola");
                     player.openInventory(inv);
                     break;
+                case "gracefix":
+                    if (args.length < 3){
+                        player.sendMessage("specify player");
+                        return;
+                    }
+                    Player playerToFix = Bukkit.getPlayer(args[2]);
+                    if (playerToFix == null){
+                        player.sendMessage("invalid player");
+                        return;
+                    }
+                    playerToFix.setInvisible(false);
+                    playerToFix.setGlowing(false);
+                    player.sendMessage("done");
+                    break;
             }
         }else if ("deathtrain".equalsIgnoreCase(command)){
             if (!sender.hasPermission("pd.deathtrain")){

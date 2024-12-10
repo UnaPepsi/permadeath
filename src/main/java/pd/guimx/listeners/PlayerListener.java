@@ -117,6 +117,15 @@ public class PlayerListener implements Listener{
             e.getPlayer().clearActivePotionEffects();
             e.getPlayer().damage(5000, DamageSource.builder(DamageType.MAGIC).build());
         }
+
+        //When players with grace period time disconnected they kept their infinite invis and glowing effect
+        //I may use another fix but for now this should cover most cases
+        if (!e.getPlayer().hasPotionEffect(PotionEffectType.INVISIBILITY)){ //dont fire if player has invis potion effect, bug still applies if player has grace period time and drinks an invis pot, but who's gonna do that?
+            e.getPlayer().setInvisible(false);
+        }
+        if (!e.getPlayer().hasPotionEffect(PotionEffectType.GLOWING)){ //same for glowing
+            e.getPlayer().setGlowing(false);
+        }
     }
 
     @EventHandler
