@@ -1,7 +1,11 @@
 package pd.guimx;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.wrappers.EnumWrappers;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.Consumable;
 import io.papermc.paper.datacomponent.item.DeathProtection;
@@ -59,12 +63,12 @@ public class Permadeath extends JavaPlugin {
     }
 
     public void onDisable(){
-        Bukkit.getConsoleSender().sendMessage(Miscellaneous.translateColor(prefix+"&chas been disabled!"));
         try {
             db.conn.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        Bukkit.getConsoleSender().sendMessage(Miscellaneous.translateColor(prefix+"&chas been disabled!"));
     }
 
     public void registerCommands(){

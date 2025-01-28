@@ -14,8 +14,10 @@ import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
+import org.bukkit.event.raid.RaidSpawnWaveEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -109,7 +111,7 @@ public class EntityListener implements Listener {
             if (day > 20) {
                 magmaCube.setSize(16);
             }
-        }else if (entity instanceof Slime slime){
+        }else if (entity instanceof Slime slime && !slime.getPersistentDataContainer().has(NamespacedKey.minecraft("mimic_slime"), PersistentDataType.STRING)){
             if (day > 20) {
                 slime.setSize(15);
                 slime.getAttribute(Attribute.MAX_HEALTH).setBaseValue(slime.getAttribute(Attribute.MAX_HEALTH).getBaseValue() * 2);
@@ -275,8 +277,8 @@ public class EntityListener implements Listener {
                 }
             }
         }else if (entity instanceof Wither wither){
-            wither.getAttribute(Attribute.MAX_HEALTH).setBaseValue(400); //base is 300
-            // wither.setHealth(400); //wither heals itself
+            wither.getAttribute(Attribute.MAX_HEALTH).setBaseValue(450); //base is 300
+            Bukkit.getScheduler().runTaskLater(permadeath, () -> wither.setHealth(450),220); //wither takes 220 ticks or 11 seconds to spawn
         }
 
         if (day > 20 && entity instanceof Enemy enemy && permadeath.getPlayerListener().isDeathTrain()){
@@ -287,9 +289,54 @@ public class EntityListener implements Listener {
 
     @EventHandler
     public void onDeath(EntityDeathEvent e){
+        Entity entity = e.getEntity();
+
+        if (entity instanceof Slime slime && slime.getPersistentDataContainer().has(NamespacedKey.minecraft("mimic_slime"),PersistentDataType.STRING)){
+            e.getDrops().clear();
+            return;
+        }
+
+        if (entity instanceof Wither wither){
+            /*
+            Main reason I clear the drop and manually drop the nether star later is because it looks weird when this custom death animation is played and it already dropped its loot
+            But the other one (probably me being dumb) is that if the blocks got destroyed I just couldn't find the nether star anywhere lol (not even tp), maybe it flew out of render distance idk
+             */
+            e.getDrops().clear();
+            //int droppedXp = e.getDroppedExp();
+            e.setDroppedExp(0);
+            wither.getWorld().spawn(wither.getLocation(),EntityType.WITHER.getEntityClass(), spawnedEntity -> {
+                Wither spawnedWither = (Wither) spawnedEntity;
+                spawnedWither.setInvulnerable(true); //when multiple withers were spawned and the explosion of one killed another, it would play this animation over and over again, this fixes it though it shouldn't be necessary I think
+                spawnedWither.setInvulnerableTicks(20*5);
+                spawnedWither.setGravity(false);
+                if (spawnedWither.getBossBar() != null) {
+                    spawnedWither.getBossBar().setVisible(false);
+                }
+                Bukkit.getScheduler().runTaskLater(permadeath,() -> {
+                    spawnedWither.getWorld().createExplosion(spawnedWither.getLocation(),4*15,false); //4 is tnt. false because fire destroys the nether star
+                },20*5);
+                final float[] yaw = {1,0.2f}; //idc im lazy
+                Bukkit.getScheduler().runTaskTimer(permadeath, task -> {
+                   if (spawnedWither.getInvulnerableTicks() <= 0) {
+                       spawnedWither.getWorld().dropItemNaturally(spawnedWither.getLocation(),new ItemStack(Material.NETHER_STAR,1));
+                       spawnedWither.getWorld().spawn(spawnedWither.getLocation(),EntityType.EXPERIENCE_ORB.getEntityClass(),exp -> ((ExperienceOrb) exp).setExperience(250)); //wither drops 50 xp
+                       spawnedWither.remove();
+                       task.cancel();
+                       return;
+                   }
+                   spawnedWither.setRotation(yaw[0],0);
+                   spawnedWither.getAttribute(Attribute.SCALE).setBaseValue(spawnedWither.getAttribute(Attribute.SCALE).getBaseValue()+0.01);
+                   spawnedWither.getWorld().playSound(spawnedWither,"minecraft:block.beacon.deactivate",20,yaw[1]);
+                   yaw[0] += 45;
+                   if (yaw[1] < 2){
+                       yaw[1] += 0.01f;
+                   }
+                },0,1);
+            });
+            wither.remove(); //so it doesn't display the vanilla death animation
+        }
         int day = permadeath.getMainConfigManager().getDay();
         if (day > 19){
-            Entity entity = e.getEntity();
             if (entity instanceof IronGolem ||
                 entity instanceof PigZombie ||
                 entity instanceof Guardian ||
@@ -365,10 +412,7 @@ public class EntityListener implements Listener {
             }
         }
         if (shooter instanceof Wither && random.nextFloat() < 0.08){
-            Bukkit.getScheduler().runTaskLater(permadeath, () -> {
-                Location shootLocation = e.getHitBlock().getLocation();
-                e.getHitBlock().getWorld().spawn(shootLocation,EntityType.WITHER_SKELETON.getEntityClass());
-            },20);
+            Bukkit.getScheduler().runTaskLater(permadeath, () -> e.getEntity().getWorld().spawn(e.getEntity().getLocation(),EntityType.WITHER_SKELETON.getEntityClass()),20);
         }
     }
     @EventHandler
@@ -434,7 +478,7 @@ public class EntityListener implements Listener {
     @EventHandler
     public void onSlimeSplit(SlimeSplitEvent e){
         int day = permadeath.getMainConfigManager().getDay();
-        if (day > 20){
+        if (day > 20 || e.getEntity().getPersistentDataContainer().has(NamespacedKey.minecraft("mimic_slime"),PersistentDataType.STRING)){
             e.setCancelled(true);
         }
     }
@@ -687,6 +731,14 @@ public class EntityListener implements Listener {
     public void onDragonPush(EntityPushedByEntityAttackEvent e){
         if (e.getPushedBy() instanceof EnderDragon && e.getEntity() instanceof ArmorStand stand && stand.isInvisible()){
             e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onRaid(RaidSpawnWaveEvent e){
+        if (e.getPatrolLeader().getWave() >= 6){
+            e.getPatrolLeader().getWorld().spawn(e.getPatrolLeader().getLocation(),EntityType.ILLUSIONER.getEntityClass());
+            Bukkit.getLogger().info("Illusioner at "+e.getPatrolLeader().getLocation());
         }
     }
 }

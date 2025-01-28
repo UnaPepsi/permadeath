@@ -4,7 +4,7 @@ config:
   death_train_seconds: 3600
   discord_webhooks: []
   starting_lives: 3
-  rabies_seconds: 72000 # 20 minutes
+  rabies_seconds: 1200 # 20 minutes
   grace_period: 300 # 5 minutes, seconds on which players won't take damage after dying
 messages:
   prefix: "&8[&4&lPermadeath&r&8]&r "

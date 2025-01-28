@@ -1,5 +1,5 @@
 main: pd.guimx.Permadeath
-version: 2.7.5
+version: 2.8.0
 name: Permadeath
 author: guimx
 api-version: 1.21.3

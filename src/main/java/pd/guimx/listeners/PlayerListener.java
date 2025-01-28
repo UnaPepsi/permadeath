@@ -1,6 +1,7 @@
 package pd.guimx.listeners;
 
 import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.CustomModelData;
 import io.papermc.paper.datacomponent.item.Equippable;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
@@ -14,6 +15,7 @@ import org.bukkit.*;
 import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
+import org.bukkit.block.Chest;
 import org.bukkit.block.Skull;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Bed;
@@ -32,9 +34,11 @@ import org.bukkit.event.inventory.SmithItemEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent.Status;
 import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.SmithingInventory;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -91,6 +95,7 @@ public class PlayerListener implements Listener{
         permadeath.getDb().addUser(player.getName(),permadeath.getMainConfigManager().getStartingLives());
         e.setJoinMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("player_joined"),
                 player.getName(),permadeath.getDb().getLifes(player.getName())));
+        //TODO change the texture pack and hash
         player.setResourcePack("https://fun.guimx.me/r/permadeath2.1.zip?compress=false",
               HexFormat.of().parseHex("ae8a33eb6d3be0f39385306c1e79fe62a6b9e7fc"), Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("texture_pack")),false);
         player.sendMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("current_day"),
@@ -369,7 +374,7 @@ public class PlayerListener implements Listener{
         Location loc = e.getTo().clone();
         loc.setY(e.getTo().getY()-0.1);
         Player player = e.getPlayer();
-        if (loc.getBlock().getType() == Material.BEDROCK){
+        if (loc.getBlock().getType() == Material.BEDROCK && player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE){
 
             //For some reason, even with a higher y vector, the velocity is the same, just that for some reason,
             //when I take damage, if I set the Vector to have a higher y the velocity applies multiple times.
@@ -377,6 +382,9 @@ public class PlayerListener implements Listener{
             player.setVelocity(new Vector(0,10,0));
         }else if ((loc.add(0,2,0).getBlock().getType() == Material.WATER ||
                     loc.add(0,-1,0).getBlock().getType() == Material.WATER && player.isSwimming()) &&
+                    //even without the potion checks the player wouldn't drown but their bubbles would pop and that looks kinda weird
+                    !player.hasPotionEffect(PotionEffectType.WATER_BREATHING) &&
+                    !player.hasPotionEffect(PotionEffectType.CONDUIT_POWER) &&
                     permadeath.getMainConfigManager().getDay() > 19){
             player.setRemainingAir(player.getRemainingAir() >= 0 ? (int) (player.getRemainingAir() * 0.75) : player.getRemainingAir());
         }
@@ -573,7 +581,7 @@ public class PlayerListener implements Listener{
                 if (playersWithRabies.get(player) == null){
                     playersWithRabies.put(player,permadeath.getMainConfigManager().getRabiesSeconds());
                     player.sendMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("rabies_infected"),
-                            permadeath.getMainConfigManager().getRabiesSeconds()));
+                            permadeath.getMainConfigManager().getRabiesSeconds()/60));
                     Bukkit.getScheduler().runTaskLater(permadeath, () -> {
                         if (playersWithRabies.get(player) != null){
                             player.clearActivePotionEffects(); //just in case they have resistance 5 or sum
@@ -629,4 +637,68 @@ public class PlayerListener implements Listener{
     //        player.sendMessage(Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("grace_period_removed")));
     //    }
     //}
+
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent e){
+        //Bukkit.getLogger().info("asd"+ e.hasBlock()+" "+e.getClickedBlock()+" "+(e.getClickedBlock()instanceof Chest));
+        if (e.hasBlock() && e.getClickedBlock().getState() instanceof Chest chest && chest.hasLootTable() && !e.isCancelled() && random.nextFloat() <= 0.2){
+            e.setCancelled(true);
+            //we have to wait since loot isnt generated yet
+            Inventory[] chestInventory = new Inventory[1];
+            Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                chestInventory[0] = chest.getBlockInventory();
+                e.getClickedBlock().setType(Material.AIR);
+                ItemStack mimicChestItem = new ItemStack(Material.CHEST);
+                mimicChestItem.setData(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addString("pd_mimic_8").build());
+                ItemMeta mimicChestItemMeta = mimicChestItem.getItemMeta();
+                mimicChestItemMeta.setItemModel(NamespacedKey.minecraft("mimic"));
+                //mimicChestItemMeta.getCustomModelDataComponent().setStrings(List.of("pd_mimic_5"));
+                mimicChestItem.setItemMeta(mimicChestItemMeta);
+                ArmorStand armorStand = e.getClickedBlock().getWorld().spawn(e.getClickedBlock().getLocation(), ArmorStand.class);
+                armorStand.getEquipment().setHelmet(mimicChestItem);
+
+                armorStand.setNoPhysics(true); //through blocks
+                armorStand.setMarker(true);
+                armorStand.setInvisible(true);
+                armorStand.getAttribute(Attribute.SCALE).setBaseValue(1.5);
+
+                //to differentiate between other slimes that are affected by this plugin
+                Slime slime = e.getClickedBlock().getWorld().spawn(e.getClickedBlock().getLocation(),Slime.class, CreatureSpawnEvent.SpawnReason.CUSTOM);
+                slime.getPersistentDataContainer().set(NamespacedKey.minecraft("mimic_slime"), PersistentDataType.STRING,"true");
+                slime.setInvisible(true);
+                slime.setSilent(true);
+                slime.setSize(4); //1.5 hearts with full iron
+                slime.getAttribute(Attribute.SCALE).setBaseValue(0.35);
+                slime.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20);
+                slime.setHealth(20);
+                slime.setCustomName("Mimic");
+                slime.setCustomNameVisible(false);
+
+                final int[] mimicState = {0};
+                final boolean[] mimicOpeningMouth = {true};
+                Bukkit.getScheduler().runTaskTimer(permadeath, runnable -> {
+                    if (slime.isDead()){
+                        Bukkit.getLogger().info("mimic ded");
+                        chestInventory[0].forEach(item -> {
+                            if (item == null){return;}
+                            //Bukkit.getLogger().info(item+"");
+                            armorStand.getWorld().dropItemNaturally(armorStand.getLocation(),item);
+                        });
+                        runnable.cancel();
+                        armorStand.remove();
+                        return;
+                    }
+                    armorStand.teleport(slime.getLocation().add(0,-2,0).addRotation(180,0)); //the chest is backwards so we rotate 180
+                    mimicOpeningMouth[0] = mimicState[0] < 10 && mimicOpeningMouth[0] || mimicState[0] <= 0;
+                    mimicChestItem.setData(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addString("pd_mimic_"+mimicState[0]).build());
+                    armorStand.getEquipment().setHelmet(mimicChestItem);
+                    if (mimicOpeningMouth[0]) {
+                        mimicState[0]++;
+                    }else{
+                        mimicState[0]--;
+                    }
+                },0,1);
+            },1);
+        }
+    }
 }

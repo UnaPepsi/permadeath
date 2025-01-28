@@ -2,15 +2,25 @@ package pd.guimx.commands;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.WrappedBlockData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.CustomModelData;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.block.Block;
+import org.bukkit.block.Chest;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.*;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -18,6 +28,9 @@ import pd.guimx.Permadeath;
 import pd.guimx.utils.Miscellaneous;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import static pd.guimx.listeners.EntityListener.random;
 
 
 public class MainCommand implements CommandExecutor {
@@ -228,6 +241,72 @@ public class MainCommand implements CommandExecutor {
                     playerToFix.setInvisible(false);
                     playerToFix.setGlowing(false);
                     player.sendMessage("done");
+                    break;
+                case "mimic":
+                    Block chestBlock = player.getLocation().getBlock();
+                    chestBlock.setType(Material.CHEST);
+                    for (int i = 0; i < 50; i++) {
+                        int finalI = i;
+                        Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+                            PacketContainer jajaContainer = permadeath.getProtocolManager().createPacket(PacketType.Play.Server.BLOCK_ACTION);
+                            jajaContainer.getBlockPositionModifier().write(0, new BlockPosition(chestBlock.getX(), chestBlock.getY(), chestBlock.getZ()));
+                            jajaContainer.getIntegers().write(0, 1);
+                            jajaContainer.getIntegers().write(1, finalI %2==0 ? 0 : 1);
+                            jajaContainer.getBlocks().write(0, chestBlock.getType());
+                            permadeath.getProtocolManager().sendServerPacket(player, jajaContainer);
+                            player.sendMessage(finalI+"");
+                        },5*i);
+                    }
+                    break;
+                case "mimic2":
+                    ItemStack mimicChestItem = new ItemStack(Material.CHEST);
+                    mimicChestItem.setData(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addString("pd_mimic_8").build());
+                    ItemMeta mimicChestItemMeta = mimicChestItem.getItemMeta();
+                    mimicChestItemMeta.setItemModel(NamespacedKey.minecraft("mimic"));
+                    //mimicChestItemMeta.getCustomModelDataComponent().setStrings(List.of("pd_mimic_5"));
+                    mimicChestItem.setItemMeta(mimicChestItemMeta);
+                    ArmorStand armorStand = player.getWorld().spawn(player.getLocation(), ArmorStand.class);
+                    armorStand.getEquipment().setHelmet(mimicChestItem);
+
+                    armorStand.setNoPhysics(true); //through blocks
+                    armorStand.setMarker(true);
+                    armorStand.setInvisible(true);
+                    armorStand.getAttribute(Attribute.SCALE).setBaseValue(1.5);
+
+                    //to differentiate between other slimes that are affected by this plugin
+                    Slime slime = player.getWorld().spawn(player.getLocation(),Slime.class, CreatureSpawnEvent.SpawnReason.CUSTOM);
+                    slime.getPersistentDataContainer().set(NamespacedKey.minecraft("mimic_slime"), PersistentDataType.STRING,"true");
+                    slime.setInvisible(true);
+                    slime.setSilent(true);
+                    slime.setSize(4); //1.5 hearts with full iron
+                    slime.getAttribute(Attribute.SCALE).setBaseValue(0.35);
+                    slime.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20);
+                    slime.setHealth(20);
+
+                    final int[] mimicState = {1};
+                    final boolean[] mimicOpeningMouth = {true};
+                    Bukkit.getScheduler().runTaskTimer(permadeath, runnable -> {
+                        if (slime.isDead()){
+                            Bukkit.getLogger().info("asd");
+                            runnable.cancel();
+                            armorStand.remove();
+                            return;
+                        }
+                        armorStand.teleport(slime.getLocation().add(0,-2,0).addRotation(180,0));
+                        mimicOpeningMouth[0] = mimicState[0] < 10 && mimicOpeningMouth[0] || mimicState[0] <= 0;
+                        mimicChestItem.setData(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addString("pd_mimic_"+mimicState[0]).build());
+                        armorStand.getEquipment().setHelmet(mimicChestItem);
+                        //Bukkit.getLogger().info(mimicChestItem.getData(DataComponentTypes.CUSTOM_MODEL_DATA)+" | "+mimicState[0]);
+                        if (mimicOpeningMouth[0]) {
+                            mimicState[0]++;
+                        }else{
+                            mimicState[0]--;
+                        }
+                    },0,1);
+
+
+
+                    Bukkit.getLogger().info(armorStand.getEquipment().getHelmet().getItemMeta().getCustomModelDataComponent().getStrings() +" | "+ mimicChestItemMeta.getCustomModelDataComponent().getStrings());
                     break;
             }
         }else if ("deathtrain".equalsIgnoreCase(command)){
