@@ -95,9 +95,8 @@ public class PlayerListener implements Listener{
         permadeath.getDb().addUser(player.getName(),permadeath.getMainConfigManager().getStartingLives());
         e.setJoinMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("player_joined"),
                 player.getName(),permadeath.getDb().getLifes(player.getName())));
-        //TODO change the texture pack and hash
-        player.setResourcePack("https://fun.guimx.me/r/permadeath2.1.zip?compress=false",
-              HexFormat.of().parseHex("ae8a33eb6d3be0f39385306c1e79fe62a6b9e7fc"), Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("texture_pack")),false);
+        player.setResourcePack("https://fun.guimx.me/r/Permadeath%203.0?compress=false",
+              HexFormat.of().parseHex("da280498815c4de85c21942a31c746fb97a1f5e7"), Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("texture_pack")),false);
         player.sendMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("current_day"),
                 permadeath.getMainConfigManager().getDay()));
         player.getAttribute(Attribute.JUMP_STRENGTH).setBaseValue(
@@ -374,7 +373,7 @@ public class PlayerListener implements Listener{
         Location loc = e.getTo().clone();
         loc.setY(e.getTo().getY()-0.1);
         Player player = e.getPlayer();
-        if (loc.getBlock().getType() == Material.BEDROCK && player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE){
+        if (loc.getBlock().getType() == Material.BEDROCK && (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE)){
 
             //For some reason, even with a higher y vector, the velocity is the same, just that for some reason,
             //when I take damage, if I set the Vector to have a higher y the velocity applies multiple times.
@@ -564,7 +563,7 @@ public class PlayerListener implements Listener{
             }
             if (damager instanceof Goat goat) {
                 player.setVelocity(goat.getLocation().getDirection().setY(0).normalize().multiply(20));
-            }else if (damager instanceof Slime){
+            }else if (damager instanceof Slime slime && !slime.getPersistentDataContainer().has(NamespacedKey.minecraft("mimic_slime"),PersistentDataType.STRING)){
                 new BukkitRunnable(){
                     @Override
                     public void run() {
@@ -642,6 +641,7 @@ public class PlayerListener implements Listener{
     public void onPlayerInteract(PlayerInteractEvent e){
         //Bukkit.getLogger().info("asd"+ e.hasBlock()+" "+e.getClickedBlock()+" "+(e.getClickedBlock()instanceof Chest));
         if (e.hasBlock() && e.getClickedBlock().getState() instanceof Chest chest && chest.hasLootTable() && !e.isCancelled() && random.nextFloat() <= 0.2){
+            e.getPlayer().getWorld().playSound(e.getClickedBlock().getLocation(),"minecraft:item.wolf_armor.crack",2f,0.6f);
             e.setCancelled(true);
             //we have to wait since loot isnt generated yet
             Inventory[] chestInventory = new Inventory[1];
@@ -670,6 +670,7 @@ public class PlayerListener implements Listener{
                 slime.setSize(4); //1.5 hearts with full iron
                 slime.getAttribute(Attribute.SCALE).setBaseValue(0.35);
                 slime.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20);
+                slime.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.8);
                 slime.setHealth(20);
                 slime.setCustomName("Mimic");
                 slime.setCustomNameVisible(false);
@@ -679,6 +680,7 @@ public class PlayerListener implements Listener{
                 Bukkit.getScheduler().runTaskTimer(permadeath, runnable -> {
                     if (slime.isDead()){
                         Bukkit.getLogger().info("mimic ded");
+                        slime.getWorld().playSound(slime.getLocation(),"minecraft:entity.creaking.death",2f,2f);
                         chestInventory[0].forEach(item -> {
                             if (item == null){return;}
                             //Bukkit.getLogger().info(item+"");
@@ -688,7 +690,7 @@ public class PlayerListener implements Listener{
                         armorStand.remove();
                         return;
                     }
-                    armorStand.teleport(slime.getLocation().add(0,-2,0).addRotation(180,0)); //the chest is backwards so we rotate 180
+                    armorStand.teleport(slime.getLocation().add(0,-1.95,0).addRotation(180,0)); //the chest is backwards so we rotate 180
                     mimicOpeningMouth[0] = mimicState[0] < 10 && mimicOpeningMouth[0] || mimicState[0] <= 0;
                     mimicChestItem.setData(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addString("pd_mimic_"+mimicState[0]).build());
                     armorStand.getEquipment().setHelmet(mimicChestItem);

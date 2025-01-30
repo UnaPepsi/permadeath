@@ -281,6 +281,7 @@ public class MainCommand implements CommandExecutor {
                     slime.setSize(4); //1.5 hearts with full iron
                     slime.getAttribute(Attribute.SCALE).setBaseValue(0.35);
                     slime.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20);
+                    slime.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.8);
                     slime.setHealth(20);
 
                     final int[] mimicState = {1};
