@@ -6,6 +6,8 @@ config:
   starting_lives: 3
   rabies_seconds: 1200 # 20 minutes
   grace_period: 300 # 5 minutes, seconds on which players won't take damage after dying
+  mimic_base_speed: 0.6
+  mimic_base_speed_day_10: 0.8
 messages:
   prefix: "&8[&4&lPermadeath&r&8]&r "
   player_banned: "&c&lPERMADEATH!&r\nYou have died and are no longer allowed to join back" #f*ck no im not making it a list

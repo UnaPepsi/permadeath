@@ -19,6 +19,8 @@ public class MainConfigManager {
     private int startingLives;
     private int rabiesSeconds;
     private int gracePeriod;
+    private double mimicBaseSpeed;
+    private double mimicBaseSpeedDay10;
 
     public MainConfigManager(Permadeath permadeath){
         this.permadeath = permadeath;
@@ -34,6 +36,8 @@ public class MainConfigManager {
         this.deathTrainSeconds = config.getInt("config.death_train_seconds");
         this.rabiesSeconds = config.getInt("config.rabies_seconds");
         gracePeriod = config.getInt("config.grace_period");
+        mimicBaseSpeed = config.getDouble("config.mimic_base_speed");
+        mimicBaseSpeedDay10 = config.getDouble("config.mimic_base_speed_day_10");
         messages.put("prefix",config.getString("messages.prefix"));
         messages.put("player_banned",config.getString("messages.player_banned"));
         messages.put("player_joined",config.getString("messages.player_joined"));
@@ -109,5 +113,13 @@ public class MainConfigManager {
 
     public int getRabiesSeconds() {
         return rabiesSeconds;
+    }
+
+    public double getMimicBaseSpeed() {
+        return mimicBaseSpeed;
+    }
+
+    public double getMimicBaseSpeedDay10() {
+        return mimicBaseSpeedDay10;
     }
 }

@@ -46,6 +46,7 @@ import org.bukkit.scoreboard.Team;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import pd.guimx.Permadeath;
+import pd.guimx.config.MainConfigManager;
 import pd.guimx.utils.Miscellaneous;
 import pd.guimx.utils.Webhook;
 
@@ -670,7 +671,8 @@ public class PlayerListener implements Listener{
                 slime.setSize(4); //1.5 hearts with full iron
                 slime.getAttribute(Attribute.SCALE).setBaseValue(0.35);
                 slime.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20);
-                slime.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.8);
+                MainConfigManager mainConfigManager = permadeath.getMainConfigManager();
+                slime.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(mainConfigManager.getDay() > 9 ? mainConfigManager.getMimicBaseSpeedDay10() : mainConfigManager.getMimicBaseSpeed());
                 slime.setHealth(20);
                 slime.setCustomName("Mimic");
                 slime.setCustomNameVisible(false);

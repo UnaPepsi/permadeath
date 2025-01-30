@@ -25,6 +25,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import pd.guimx.Permadeath;
+import pd.guimx.config.MainConfigManager;
 import pd.guimx.utils.Miscellaneous;
 
 import java.util.ArrayList;
@@ -281,7 +282,8 @@ public class MainCommand implements CommandExecutor {
                     slime.setSize(4); //1.5 hearts with full iron
                     slime.getAttribute(Attribute.SCALE).setBaseValue(0.35);
                     slime.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20);
-                    slime.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.8);
+                    MainConfigManager mainConfigManager = permadeath.getMainConfigManager();
+                    slime.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(mainConfigManager.getDay() > 9 ? mainConfigManager.getMimicBaseSpeedDay10() : mainConfigManager.getMimicBaseSpeed());
                     slime.setHealth(20);
 
                     final int[] mimicState = {1};
