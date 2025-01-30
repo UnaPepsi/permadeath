@@ -173,7 +173,8 @@ public class Permadeath extends JavaPlugin {
                                      new PotionEffect(PotionEffectType.ABSORPTION,20*5,1),
                                      new PotionEffect(PotionEffectType.REGENERATION,20*45,1),
                                      new PotionEffect(PotionEffectType.FIRE_RESISTANCE,20*40,0),
-                                     new PotionEffect(PotionEffectType.SPEED,20*10,0) //why not
+                                     new PotionEffect(PotionEffectType.SPEED,20*10,1), //why not
+                                     new PotionEffect(PotionEffectType.RESISTANCE,20*10,1) //why not
                                 ),1)));
         jesusTotemItem.setData(DataComponentTypes.DEATH_PROTECTION,jesusTotemDeathProtection);
         ItemMeta jesusTotemMeta = jesusTotemItem.getItemMeta();

@@ -95,7 +95,7 @@ public class PlayerListener implements Listener{
         permadeath.getDb().addUser(player.getName(),permadeath.getMainConfigManager().getStartingLives());
         e.setJoinMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("player_joined"),
                 player.getName(),permadeath.getDb().getLifes(player.getName())));
-        player.setResourcePack("https://fun.guimx.me/r/Permadeath%203.0?compress=false",
+        player.setResourcePack("https://fun.guimx.me/r/Permadeath%203.0.zip?compress=false",
               HexFormat.of().parseHex("da280498815c4de85c21942a31c746fb97a1f5e7"), Miscellaneous.translateColor(permadeath.getMainConfigManager().getMessages().get("texture_pack")),false);
         player.sendMessage(Miscellaneous.translateColor(permadeath.prefix+permadeath.getMainConfigManager().getMessages().get("current_day"),
                 permadeath.getMainConfigManager().getDay()));
