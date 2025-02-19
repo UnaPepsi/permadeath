@@ -16,6 +16,7 @@ public class MainConfigManager {
     private int deathTrainSeconds;
     private HashMap<String,String> messages = new HashMap<>();
     private List<String> discordWebhooks;
+    private List<String> rolesToPing;
     private int startingLives;
     private int rabiesSeconds;
     private int gracePeriod;
@@ -56,6 +57,7 @@ public class MainConfigManager {
         messages.put("totem_worked",config.getString("messages.totem_worked"));
         messages.put("bed_anchor_disabled_end",config.getString("messages.bed_anchor_disabled_end"));
         discordWebhooks = config.getStringList("config.discord_webhooks");
+        rolesToPing = config.getStringList("config.roles_to_ping");
         messages.put("discord_webhook_died",(config.getString("messages.discord_webhook_died")));
         messages.put("discord_webhook_totem",(config.getString("messages.discord_webhook_totem")));
         startingLives = config.getInt("config.starting_lives");
@@ -106,6 +108,9 @@ public class MainConfigManager {
     }
     public List<String> getDiscordWebhooks(){
         return discordWebhooks;
+    }
+    public List<String> getRolesToPing(){
+        return rolesToPing;
     }
     public int getStartingLives(){
         return startingLives;

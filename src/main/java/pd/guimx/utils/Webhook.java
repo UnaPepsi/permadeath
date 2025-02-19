@@ -4,6 +4,7 @@ package pd.guimx.utils;
 
 import com.google.gson.Gson;
 import org.bukkit.Bukkit;
+import pd.guimx.Permadeath;
 
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -14,7 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class Webhook {
-    public static void sendMessage(String webhookUrl, String message, String description, String playerName, int day, boolean tagEveryone){
+    public static void sendMessage(String webhookUrl, String message, String description, String playerName, int day, boolean tagRoles){
         try {
             Gson gson = new Gson();
             HashMap<String, Object> body = new HashMap<>();
@@ -30,8 +31,12 @@ public class Webhook {
             embed.put("thumbnail",image);
             embed.put("color",16711680);
             embed.put("footer",footer);
-            if (tagEveryone){
-                body.put("content","@everyone");
+            if (tagRoles){
+                StringBuilder content = new StringBuilder();
+                Permadeath.getInstance().getMainConfigManager().getRolesToPing().forEach(role -> {
+                    content.append("<@&").append(role).append("> ");
+                });
+                body.put("content",content.toString());
             }
             embeds.add(embed);
             body.put("embeds",embeds);

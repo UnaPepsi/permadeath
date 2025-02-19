@@ -3,6 +3,7 @@ config:
   minimum_players_sleep_needed: 1 #I suck at naming pls don't kill me
   death_train_seconds: 3600
   discord_webhooks: []
+  roles_to_ping: [] #id array for the roles the webhook should ping when someone dies
   starting_lives: 3
   rabies_seconds: 1200 # 20 minutes
   grace_period: 300 # 5 minutes, seconds on which players won't take damage after dying

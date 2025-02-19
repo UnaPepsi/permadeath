@@ -34,7 +34,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Permadeath extends JavaPlugin {
-
+    private static Permadeath instance;
+    public static Permadeath getInstance(){
+        return instance;
+    }
     public String prefix;
     public String version = getDescription().getVersion();
     private ManageDatabase db;
@@ -44,6 +47,7 @@ public class Permadeath extends JavaPlugin {
     private ProtocolManager protocolManager;
 
     public void onEnable(){
+        instance = this;
         this.playerListener = new PlayerListener(this);
         this.mainConfigManager = new MainConfigManager(this);
         this.prefix = mainConfigManager.getMessages().get("prefix");
