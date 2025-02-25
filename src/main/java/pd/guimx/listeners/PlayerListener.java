@@ -413,23 +413,25 @@ public class PlayerListener implements Listener{
 
     @EventHandler
     public void onTeleport(PlayerTeleportEvent e){
-        World world = e.getTo().getWorld();
-        if ("world_the_end".equals(world.getName())){
-            DragonBattle dragonBattle = world.getEnderDragonBattle();
-            if (dragonBattle == null){
-                return;
-            }
-            EnderDragon dragon = dragonBattle.getEnderDragon();
-            if (dragon == null || dragon.getBossBar() == null){
-                return;
-            }
-            if (!"&6&lPERMADEATH DEMON".equalsIgnoreCase(dragon.getBossBar().getTitle())){
-                if (dragon.getAttribute(Attribute.MAX_HEALTH).getValue()/dragon.getHealth() < 2){
-                    dragon.getBossBar().setColor(BarColor.BLUE);
+        Bukkit.getScheduler().runTaskLater(permadeath, () -> {
+            World world = e.getTo().getWorld();
+            if ("world_the_end".equals(world.getName())){
+                DragonBattle dragonBattle = world.getEnderDragonBattle();
+                if (dragonBattle == null){
+                    return;
                 }
-                dragon.customName(Component.text(Miscellaneous.translateColor("&6&lPERMADEATH DEMON")));
-            }
-       }
+                EnderDragon dragon = dragonBattle.getEnderDragon();
+                if (dragon == null || dragon.getBossBar() == null){
+                    return;
+                }
+                if (!"&6&lPERMADEATH DEMON".equalsIgnoreCase(dragon.getBossBar().getTitle())){
+                    if (dragon.getAttribute(Attribute.MAX_HEALTH).getValue()/dragon.getHealth() < 2){
+                        dragon.getBossBar().setColor(BarColor.BLUE);
+                    }
+                    dragon.customName(Component.text(Miscellaneous.translateColor("&6&lPERMADEATH DEMON")));
+                }
+           }
+        },25); //dragon takes 20 ticks to spawn, extra 5 ticks just in case
     }
 
     @EventHandler

@@ -551,7 +551,7 @@ public class EntityListener implements Listener {
     @EventHandler
     public void onDragonPhaseChange(EnderDragonChangePhaseEvent e) {
         EnderDragon dragon = e.getEntity();
-        if (dragon.getDragonBattle() == null && dragon.getDragonBattle().getEndPortalLocation() == null){
+        if (dragon.getDragonBattle() == null || dragon.getDragonBattle().getEndPortalLocation() == null){
             return;
         }
         EnderDragon.Phase phase = e.getCurrentPhase();
