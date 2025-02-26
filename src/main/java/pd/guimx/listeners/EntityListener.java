@@ -255,7 +255,7 @@ public class EntityListener implements Listener {
                     endermite.addPotionEffect(spiderEffects.get(random.nextInt(spiderEffects.size())));
                 }
             }
-        }else if (entity instanceof Zombie zombie){
+        }else if (entity instanceof Zombie zombie && !zombie.getPersistentDataContainer().has(NamespacedKey.minecraft("mimic_zombie"),PersistentDataType.STRING)){
             if (day > 29){
                 if (!zombie.isAdult()) {
                     zombie.getAttribute(Attribute.SCALE).setBaseValue(zombie.getAttribute(Attribute.SCALE).getValue() / 2);

@@ -8,6 +8,8 @@ import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -33,10 +35,7 @@ import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.inventory.SmithItemEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent.Status;
-import org.bukkit.inventory.EntityEquipment;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.SmithingInventory;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
@@ -655,15 +654,22 @@ public class PlayerListener implements Listener{
                 mimicChestItem.setData(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addString("pd_mimic_8").build());
                 ItemMeta mimicChestItemMeta = mimicChestItem.getItemMeta();
                 mimicChestItemMeta.setItemModel(NamespacedKey.minecraft("mimic"));
+                mimicChestItemMeta.displayName(Component.text("Mimic's corpse").color(TextColor.color(255,0,0)).decoration(TextDecoration.ITALIC,false));
                 //mimicChestItemMeta.getCustomModelDataComponent().setStrings(List.of("pd_mimic_5"));
                 mimicChestItem.setItemMeta(mimicChestItemMeta);
-                ArmorStand armorStand = e.getClickedBlock().getWorld().spawn(e.getClickedBlock().getLocation(), ArmorStand.class);
-                armorStand.getEquipment().setHelmet(mimicChestItem);
-
-                armorStand.setNoPhysics(true); //through blocks
-                armorStand.setMarker(true);
-                armorStand.setInvisible(true);
-                armorStand.getAttribute(Attribute.SCALE).setBaseValue(1.5);
+                //mimicChestItem.setData(DataComponentTypes.EQUIPPABLE, Equippable.equippable(EquipmentSlot.HEAD)); //when on head the chest is backwards and I cba to fix that
+                Zombie mimicEntity = e.getClickedBlock().getWorld().spawn(e.getClickedBlock().getLocation(), Zombie.class, c -> {
+                    c.getEquipment().clear();
+                    c.setCanPickupItems(false);
+                    c.setSilent(true);
+                    c.setAI(false);
+                    c.getAttribute(Attribute.SCALE).setBaseValue(1.5);
+                    c.setNoPhysics(true); //through blocks
+                    c.setInvisible(true);
+                    c.getEquipment().setHelmet(mimicChestItem);
+                    c.getPersistentDataContainer().set(NamespacedKey.minecraft("mimic_zombie"), PersistentDataType.STRING,"true");
+                });
+                //armorSand.setMarker(true);
 
                 //to differentiate between other slimes that are affected by this plugin
                 Slime slime = e.getClickedBlock().getWorld().spawn(e.getClickedBlock().getLocation(),Slime.class, CreatureSpawnEvent.SpawnReason.CUSTOM);
@@ -672,32 +678,34 @@ public class PlayerListener implements Listener{
                 slime.setSilent(true);
                 slime.setSize(4); //1.5 hearts with full iron
                 slime.getAttribute(Attribute.SCALE).setBaseValue(0.35);
-                slime.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20);
+                //mimicEntity.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20);
                 MainConfigManager mainConfigManager = permadeath.getMainConfigManager();
                 slime.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(mainConfigManager.getDay() > 9 ? mainConfigManager.getMimicBaseSpeedDay10() : mainConfigManager.getMimicBaseSpeed());
-                slime.setHealth(20);
+                //slime.setHealth(20);
                 slime.setCustomName("Mimic");
                 slime.setCustomNameVisible(false);
 
                 final int[] mimicState = {0};
                 final boolean[] mimicOpeningMouth = {true};
                 Bukkit.getScheduler().runTaskTimer(permadeath, runnable -> {
-                    if (slime.isDead()){
+                    if (slime.isDead() || mimicEntity.isDead()){
                         Bukkit.getLogger().info("mimic ded");
                         slime.getWorld().playSound(slime.getLocation(),"minecraft:entity.creaking.death",2f,2f);
                         chestInventory[0].forEach(item -> {
                             if (item == null){return;}
                             //Bukkit.getLogger().info(item+"");
-                            armorStand.getWorld().dropItemNaturally(armorStand.getLocation(),item);
+                            mimicEntity.getWorld().dropItemNaturally(mimicEntity.getLocation(),item);
                         });
+                        mimicEntity.getWorld().dropItemNaturally(mimicEntity.getLocation(),mimicChestItem);
+                        mimicEntity.remove();
+                        slime.remove();
                         runnable.cancel();
-                        armorStand.remove();
                         return;
                     }
-                    armorStand.teleport(slime.getLocation().add(0,-1.95,0).addRotation(180,0)); //the chest is backwards so we rotate 180
+                    mimicEntity.teleport(slime.getLocation().add(0,-1.95,0).addRotation(180,0)); //the chest is backwards so we rotate 180
                     mimicOpeningMouth[0] = mimicState[0] < 10 && mimicOpeningMouth[0] || mimicState[0] <= 0;
                     mimicChestItem.setData(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addString("pd_mimic_"+mimicState[0]).build());
-                    armorStand.getEquipment().setHelmet(mimicChestItem);
+                    mimicEntity.getEquipment().setHelmet(mimicChestItem);
                     if (mimicOpeningMouth[0]) {
                         mimicState[0]++;
                     }else{

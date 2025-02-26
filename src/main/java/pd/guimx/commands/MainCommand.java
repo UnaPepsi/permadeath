@@ -8,6 +8,9 @@ import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.CustomModelData;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -130,6 +133,11 @@ public class MainCommand implements CommandExecutor {
                 return;
             }
             PacketContainer packetContainer;
+            ItemStack mimicChestItem;
+            Slime slime;
+            MainConfigManager mainConfigManager;
+            int[] mimicState;
+            boolean[] mimicOpeningMouth;
             switch (args[1]){
                 case "death":
                     packetContainer = permadeath.getProtocolManager().createPacket(PacketType.Play.Server.PLAYER_COMBAT_KILL);
@@ -260,7 +268,7 @@ public class MainCommand implements CommandExecutor {
                     }
                     break;
                 case "mimic2":
-                    ItemStack mimicChestItem = new ItemStack(Material.CHEST);
+                    mimicChestItem = new ItemStack(Material.CHEST);
                     mimicChestItem.setData(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addString("pd_mimic_8").build());
                     ItemMeta mimicChestItemMeta = mimicChestItem.getItemMeta();
                     mimicChestItemMeta.setItemModel(NamespacedKey.minecraft("mimic"));
@@ -275,19 +283,19 @@ public class MainCommand implements CommandExecutor {
                     armorStand.getAttribute(Attribute.SCALE).setBaseValue(1.5);
 
                     //to differentiate between other slimes that are affected by this plugin
-                    Slime slime = player.getWorld().spawn(player.getLocation(),Slime.class, CreatureSpawnEvent.SpawnReason.CUSTOM);
+                    slime = player.getWorld().spawn(player.getLocation(),Slime.class, CreatureSpawnEvent.SpawnReason.CUSTOM);
                     slime.getPersistentDataContainer().set(NamespacedKey.minecraft("mimic_slime"), PersistentDataType.STRING,"true");
                     slime.setInvisible(true);
                     slime.setSilent(true);
                     slime.setSize(4); //1.5 hearts with full iron
                     slime.getAttribute(Attribute.SCALE).setBaseValue(0.35);
                     slime.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20);
-                    MainConfigManager mainConfigManager = permadeath.getMainConfigManager();
+                    mainConfigManager = permadeath.getMainConfigManager();
                     slime.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(mainConfigManager.getDay() > 9 ? mainConfigManager.getMimicBaseSpeedDay10() : mainConfigManager.getMimicBaseSpeed());
                     slime.setHealth(20);
 
-                    final int[] mimicState = {1};
-                    final boolean[] mimicOpeningMouth = {true};
+                    mimicState = new int[]{1};
+                    mimicOpeningMouth = new boolean[]{true};
                     Bukkit.getScheduler().runTaskTimer(permadeath, runnable -> {
                         if (slime.isDead()){
                             Bukkit.getLogger().info("asd");
@@ -310,6 +318,64 @@ public class MainCommand implements CommandExecutor {
 
 
                     Bukkit.getLogger().info(armorStand.getEquipment().getHelmet().getItemMeta().getCustomModelDataComponent().getStrings() +" | "+ mimicChestItemMeta.getCustomModelDataComponent().getStrings());
+                    break;
+                case "mimic3":
+                    mimicChestItem = new ItemStack(Material.CHEST);
+                    mimicChestItem.setData(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addString("pd_mimic_8").build());
+                    mimicChestItemMeta = mimicChestItem.getItemMeta();
+                    mimicChestItemMeta.setItemModel(NamespacedKey.minecraft("mimic"));
+                    //mimicChestItemMeta.getCustomModelDataComponent().setStrings(List.of("pd_mimic_5"));
+                    mimicChestItemMeta.displayName(Component.text("Mimic's corpse").color(TextColor.color(255,0,0)).decoration(TextDecoration.ITALIC,false));
+                    mimicChestItem.setItemMeta(mimicChestItemMeta);
+                    Zombie mimicEntity = player.getWorld().spawn(player.getLocation(), Zombie.class, c -> {
+                        c.getEquipment().clear();
+                        c.setCanPickupItems(false);
+                        c.setSilent(true);
+                        c.setAI(false);
+                        c.getAttribute(Attribute.SCALE).setBaseValue(1.5);
+                        c.setNoPhysics(true); //through blocks
+                        c.setInvisible(true);
+                        c.getEquipment().setHelmet(mimicChestItem);
+                        c.getPersistentDataContainer().set(NamespacedKey.minecraft("mimic_zombie"), PersistentDataType.STRING,"true");
+                    });
+                    //armorSand.setMarker(true);
+
+                    //to differentiate between other slimes that are affected by this plugin
+                    slime = player.getWorld().spawn(player.getLocation(),Slime.class, CreatureSpawnEvent.SpawnReason.CUSTOM);
+                    slime.getPersistentDataContainer().set(NamespacedKey.minecraft("mimic_slime"), PersistentDataType.STRING,"true");
+                    slime.setInvisible(true);
+                    slime.setSilent(true);
+                    slime.setSize(4); //1.5 hearts with full iron
+                    slime.getAttribute(Attribute.SCALE).setBaseValue(0.35);
+                    //mimicEntity.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20);
+                    mainConfigManager = permadeath.getMainConfigManager();
+                    slime.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(mainConfigManager.getDay() > 9 ? mainConfigManager.getMimicBaseSpeedDay10() : mainConfigManager.getMimicBaseSpeed());
+                    //slime.setHealth(20);
+                    slime.setCustomName("Mimic");
+                    slime.setCustomNameVisible(false);
+
+                    mimicState = new int[]{0};
+                    mimicOpeningMouth = new boolean[]{true};
+                    Bukkit.getScheduler().runTaskTimer(permadeath, runnable -> {
+                        if (slime.isDead() || mimicEntity.isDead()){
+                            Bukkit.getLogger().info("mimic ded");
+                            slime.getWorld().playSound(slime.getLocation(),"minecraft:entity.creaking.death",2f,2f);
+                            mimicEntity.getWorld().dropItemNaturally(mimicEntity.getLocation(),mimicChestItem);
+                            mimicEntity.remove();
+                            slime.remove();
+                            runnable.cancel();
+                            return;
+                        }
+                        mimicEntity.teleport(slime.getLocation().add(0,-1.95,0).addRotation(180,0)); //the chest is backwards so we rotate 180
+                        mimicOpeningMouth[0] = mimicState[0] < 10 && mimicOpeningMouth[0] || mimicState[0] <= 0;
+                        mimicChestItem.setData(DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addString("pd_mimic_"+mimicState[0]).build());
+                        mimicEntity.getEquipment().setHelmet(mimicChestItem);
+                        if (mimicOpeningMouth[0]) {
+                            mimicState[0]++;
+                        }else{
+                            mimicState[0]--;
+                        }
+                    },0,1);
                     break;
             }
         }else if ("deathtrain".equalsIgnoreCase(command)){
