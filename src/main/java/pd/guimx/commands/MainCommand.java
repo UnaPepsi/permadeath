@@ -337,6 +337,7 @@ public class MainCommand implements CommandExecutor {
                         c.setInvisible(true);
                         c.getEquipment().setHelmet(mimicChestItem);
                         c.getPersistentDataContainer().set(NamespacedKey.minecraft("mimic_zombie"), PersistentDataType.STRING,"true");
+                        c.setAdult();
                     });
                     //armorSand.setMarker(true);
 
